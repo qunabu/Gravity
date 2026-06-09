@@ -212,12 +212,16 @@ body.tour-active .tour-panel { display: flex; }
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px;
 }
 .tour-skip:hover { color: var(--text); }
-/* Collapse toggle — mobile only (hidden on desktop). */
+/* Collapse toggle — mobile only (hidden on desktop). Styled as a clear,
+   bordered button with a generous tap target so it's obviously tappable. */
 .tour-collapse {
-  display: none; background: transparent; border: none; cursor: pointer;
-  color: var(--muted); font-size: 14px; line-height: 1; padding: 2px 4px;
+  display: none; cursor: pointer; flex: none;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid var(--line-strong); border-radius: 3px;
+  color: var(--text); font-size: 15px; line-height: 1;
+  padding: 8px 12px; margin-left: 4px;
 }
-.tour-collapse:hover { color: var(--text); }
+.tour-collapse:active { background: rgba(255, 255, 255, 0.2); }
 
 /* Language switch (EN / PL) */
 .lang-switch { display: flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; margin-left: auto; }
@@ -314,11 +318,13 @@ body.tour-active .tour-panel { display: flex; }
 
   /* Show the collapse toggle on mobile; collapsed = slim bar, just navigation. */
   .tour-collapse { display: inline-block; }
+  /* Collapsed = slim bar: keep the title (so you know the slide) + nav;
+     hide the dropdown, description, and speed control. */
   .tour-panel.collapsed { max-height: none; }
   .tour-panel.collapsed .tour-dd,
-  .tour-panel.collapsed .tour-title,
   .tour-panel.collapsed .tour-body,
   .tour-panel.collapsed .tour-speed { display: none; }
+  .tour-panel.collapsed .tour-title { margin-bottom: 10px; }
 
   /* Free-explore controls also dock to the bottom on mobile. */
   #controls {
