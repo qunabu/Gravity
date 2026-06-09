@@ -1623,6 +1623,19 @@ export class World {
           this.orbitVel.copy(this.orbitInitVel);
           this.seedRocketTrail();
         }
+      } else if (s.demoMode === 'orbit-intro') {
+        // The too-slow planet spirals into the Sun — explode at its surface and
+        // restart (only this case ever gets close; the others orbit or escape).
+        const sun = this.views.find((v) => v.body.id === 'sun');
+        const cr = (sun ? sun.mesh.scale.x : 3.5) + 0.4;
+        const ex = this.orbitPos.x - this.orbitSunPos.x, ez = this.orbitPos.z - this.orbitSunPos.z;
+        if (ex * ex + ez * ez < cr * cr) {
+          this.triggerBoom(this.orbitPos.x, this.orbitPos.y, this.orbitPos.z);
+          this.orbitPos.copy(this.orbitInitPos);
+          this.orbitVel.copy(this.orbitInitVel);
+          const ev = this.views.find((v) => v.body.id === 'earth');
+          if (ev) ev.trailPts.length = 0;
+        }
       }
       // Replay once it has flown off-screen (the escape case never returns).
       const ox = this.orbitPos.x - this.orbitSunPos.x, oz = this.orbitPos.z - this.orbitSunPos.z;
@@ -1739,6 +1752,18 @@ export class World {
           if (m.emissiveMap !== m.map) { m.emissiveMap = m.map; m.needsUpdate = true; }
           m.emissive.setHex(0xffffff);
           m.emissiveIntensity = 0.4;
+        }
+      }
+
+      // Inertia / orbit-intro: the Sun is removed or sits off-origin, so the
+      // point light barely reaches the Earth — self-illuminate it via its
+      // texture so it stays clearly visible.
+      if ((s.demoMode === 'inertia' || s.demoMode === 'orbit-intro') && v.body.id === 'earth') {
+        const m = v.mesh.material as MeshStandardMaterial;
+        if (m.emissive) {
+          if (m.emissiveMap !== m.map) { m.emissiveMap = m.map; m.needsUpdate = true; }
+          m.emissive.setHex(0xffffff);
+          m.emissiveIntensity = 0.55;
         }
       }
 
