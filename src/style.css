@@ -1,0 +1,292 @@
+/* ── SpaceX-inspired design system ───────────────────────────────────────
+   Pure black, hairline borders, thin wide-tracked uppercase labels, white
+   "fill" active states, monospace telemetry numerals. Minimal, technical. */
+
+:root {
+  --bg: #000000;
+  --panel: rgba(0, 0, 0, 0.55);
+  --line: rgba(255, 255, 255, 0.14);
+  --line-strong: rgba(255, 255, 255, 0.28);
+  --text: #f2f4f7;
+  --muted: rgba(255, 255, 255, 0.46);
+  --muted-2: rgba(255, 255, 255, 0.62);
+  --accent: #ffffff;
+  --data: #8fb6ff;       /* cool technical blue for live values */
+  --warn: #ffb84a;
+  --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --mono: 'Roboto Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); }
+body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-font-smoothing: antialiased; }
+
+#scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
+
+.credit {
+  position: fixed; right: 14px; bottom: 10px; z-index: 5;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
+  color: rgba(255, 255, 255, 0.35); text-transform: uppercase;
+}
+.credit.credit-left { right: auto; left: 14px; }
+.credit a { color: rgba(255, 255, 255, 0.55); text-decoration: none; }
+.credit a:hover { color: var(--text); }
+.label-layer { position: fixed; inset: 0; pointer-events: none; }
+
+/* ── In-scene labels ─────────────────────────────────────────────────── */
+.body-label {
+  font-family: var(--mono);
+  font-size: 10px; letter-spacing: 0.22em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 0 8px rgba(0, 0, 0, 1);
+  transform: translate(12px, -7px); padding-left: 0; white-space: nowrap;
+}
+.body-label::before {
+  content: ''; position: absolute; left: -8px; top: 50%; width: 6px; height: 1px;
+  background: rgba(255, 255, 255, 0.5);
+}
+.moon-label {
+  font-family: var(--mono);
+  font-size: 8.5px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5); text-shadow: 0 0 6px rgba(0, 0, 0, 1);
+  transform: translate(8px, -5px); white-space: nowrap;
+}
+.vec-label {
+  font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
+  padding: 2px 7px; white-space: nowrap; text-shadow: 0 0 6px #000;
+  background: rgba(0, 0, 0, 0.6); border-radius: 1px;
+}
+.vec-label.vel { color: #7af0a6; border: 1px solid rgba(122, 240, 166, 0.55); }
+.vec-label.grav { color: #ff8f8f; border: 1px solid rgba(255, 90, 90, 0.55); }
+
+/* ── Panels ──────────────────────────────────────────────────────────── */
+.panel {
+  position: fixed;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  padding: 18px 18px 20px;
+  z-index: 10;
+}
+/* HUD corner tick */
+.panel::before {
+  content: ''; position: absolute; top: -1px; left: -1px;
+  width: 14px; height: 14px;
+  border-top: 1px solid var(--accent); border-left: 1px solid var(--accent);
+}
+
+#controls { top: 18px; left: 18px; width: 296px; }
+#info { top: 18px; right: 18px; width: 280px; }
+
+h1 {
+  font-size: 17px; margin: 0; font-weight: 600;
+  letter-spacing: 0.34em; text-transform: uppercase;
+}
+.sub {
+  margin: 6px 0 18px; color: var(--muted); font-size: 9.5px;
+  letter-spacing: 0.22em; text-transform: uppercase; font-family: var(--mono);
+}
+
+.group { margin-bottom: 16px; }
+.glabel {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.24em;
+  color: var(--muted); margin-bottom: 9px; font-weight: 500;
+}
+
+/* segmented toggles */
+.seg { display: flex; gap: 0; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.seg button {
+  flex: 1; padding: 8px 4px; font-size: 10.5px; cursor: pointer;
+  background: transparent; color: var(--muted-2);
+  border: none; border-right: 1px solid var(--line);
+  text-transform: uppercase; letter-spacing: 0.12em; font-family: var(--sans);
+  transition: background 0.18s, color 0.18s;
+}
+.seg button:last-child { border-right: none; }
+.seg button:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); }
+.seg button.on { background: var(--accent); color: #000; font-weight: 600; }
+
+.hint {
+  font-size: 10px; color: var(--muted); margin-top: 8px; line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+.chk {
+  display: flex; align-items: center; gap: 9px; font-size: 11.5px;
+  margin: 9px 0; cursor: pointer; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--muted-2);
+}
+.chk input {
+  appearance: none; -webkit-appearance: none; width: 14px; height: 14px;
+  border: 1px solid var(--line-strong); border-radius: 1px; background: transparent;
+  cursor: pointer; position: relative; flex: none;
+}
+.chk input:checked { background: var(--accent); border-color: var(--accent); }
+.chk input:checked::after {
+  content: '✓'; position: absolute; inset: 0; color: #000; font-size: 10px;
+  display: flex; align-items: center; justify-content: center; font-weight: 700;
+}
+
+.tag {
+  font-family: var(--mono); font-size: 8px; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--warn);
+  border: 1px solid rgba(255, 184, 74, 0.4); border-radius: 1px;
+  padding: 1px 5px; margin-left: 6px;
+}
+
+/* range slider */
+input[type=range] {
+  -webkit-appearance: none; appearance: none; width: 100%; height: 2px;
+  background: var(--line-strong); outline: none; margin: 6px 0;
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%;
+  background: var(--accent); cursor: pointer; box-shadow: 0 0 8px rgba(255,255,255,0.5);
+}
+input[type=range]::-moz-range-thumb {
+  width: 12px; height: 12px; border-radius: 50%; background: var(--accent);
+  border: none; cursor: pointer;
+}
+
+.row { display: flex; gap: 8px; margin-top: 11px; }
+.row button, select, .tour-restart {
+  font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.12em;
+  color: var(--muted-2); background: transparent;
+  border: 1px solid var(--line); border-radius: 2px; cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.row button { flex: 1; padding: 8px; font-size: 10.5px; }
+.row button:hover { background: rgba(255, 255, 255, 0.06); color: var(--text); border-color: var(--line-strong); }
+
+select { width: 100%; padding: 8px 9px; font-size: 11px; }
+#focus { font-family: var(--mono); }
+
+.tour-restart {
+  width: 100%; margin-top: 6px; padding: 10px; font-size: 11px; color: var(--text);
+  border-color: var(--line-strong);
+}
+.tour-restart:hover { background: var(--accent); color: #000; }
+
+/* ── Info / telemetry panel ──────────────────────────────────────────── */
+#info h2 {
+  font-size: 13px; margin: 2px 0 12px; color: var(--text);
+  letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600;
+}
+.date {
+  font-family: var(--mono); font-size: 10.5px; color: var(--data);
+  letter-spacing: 0.06em; margin-bottom: 12px;
+  border-bottom: 1px solid var(--line); padding-bottom: 10px;
+}
+.fact {
+  display: flex; justify-content: space-between; font-size: 11px;
+  padding: 4px 0; gap: 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.fact span { color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-size: 9.5px; align-self: center; }
+.fact b { font-weight: 500; text-align: right; font-family: var(--mono); color: var(--text); }
+.note { font-size: 10.5px; color: var(--muted); line-height: 1.6; margin: 12px 0 0; }
+.energy {
+  font-family: var(--mono); font-size: 10px; color: var(--warn); margin-top: 12px;
+  letter-spacing: 0.04em; border-top: 1px solid var(--line); padding-top: 10px;
+}
+
+/* ── Guided tour panel (single, right side) ──────────────────────────── */
+body.tour-active #controls { display: none; }
+
+.tour-panel {
+  top: 18px; right: 18px; width: 304px;
+  max-height: calc(100vh - 36px);
+  display: none; flex-direction: column;
+  z-index: 20;
+}
+body.tour-active .tour-panel { display: flex; }
+
+.tour-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex: none; }
+.tour-eyebrow {
+  font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.22em;
+  text-transform: uppercase; color: var(--muted);
+}
+.tour-skip {
+  background: transparent; color: var(--muted); border: none; cursor: pointer;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px;
+}
+.tour-skip:hover { color: var(--text); }
+
+/* Language switch (EN / PL) */
+.lang-switch { display: flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; margin-left: auto; }
+.lang-btn {
+  background: transparent; color: var(--muted); border: none; cursor: pointer;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.1em; padding: 3px 7px;
+}
+.lang-btn + .lang-btn { border-left: 1px solid var(--line); }
+.lang-btn:hover { color: var(--text); }
+.lang-btn.on { background: var(--text); color: #000; }
+
+/* Step dropdown */
+.tour-dd { position: relative; margin-bottom: 14px; flex: none; }
+.tour-dd-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; padding: 9px 11px; cursor: pointer; border-radius: 2px;
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--line);
+  color: var(--text); font-family: var(--mono); font-size: 10.5px;
+  letter-spacing: 0.08em; text-transform: uppercase; text-align: left;
+}
+.tour-dd-toggle:hover { background: rgba(255, 255, 255, 0.09); border-color: var(--line-strong); }
+.dd-current { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dd-chev { color: var(--muted); transition: transform 0.2s; flex: none; }
+.tour-dd.open .dd-chev { transform: rotate(180deg); }
+
+.steps-list {
+  list-style: none; margin: 0; padding: 4px;
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 5;
+  max-height: 52vh; overflow-y: auto; display: none;
+  background: rgba(8, 10, 16, 0.97); border: 1px solid var(--line-strong);
+  border-radius: 2px; box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+}
+.tour-dd.open .steps-list { display: block; }
+
+/* Time-speed control */
+.tour-speed { flex: none; margin-bottom: 14px; }
+.tour-speed .glabel { margin-bottom: 6px; }
+.speed-val { color: var(--data); font-family: var(--mono); letter-spacing: 0; }
+.speed-range { width: 100%; }
+.step-item {
+  display: flex; gap: 10px; align-items: baseline; cursor: pointer;
+  padding: 6px 8px; border-left: 2px solid transparent; border-radius: 2px;
+  color: var(--muted); transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.step-item:hover { background: rgba(255, 255, 255, 0.05); color: var(--text); }
+.step-item .step-num { font-family: var(--mono); font-size: 10px; width: 18px; text-align: right; flex: none; color: var(--muted); }
+.step-item .step-title { font-size: 10px; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1.3; }
+.step-item.done { color: rgba(255, 255, 255, 0.4); }
+.step-item.on { background: rgba(255, 255, 255, 0.07); color: #fff; border-left-color: var(--accent); }
+.step-item.on .step-num { color: var(--accent); }
+
+/* Narration */
+.tour-title {
+  font-size: 13px; font-weight: 600; color: var(--accent);
+  letter-spacing: 0.14em; text-transform: uppercase; line-height: 1.35; flex: none;
+}
+.tour-body {
+  font-size: 12px; line-height: 1.6; color: var(--muted-2);
+  margin: 10px 0 14px; overflow-y: auto; flex: 1 1 auto;
+}
+.tour-foot { display: flex; align-items: center; gap: 10px; flex: none; }
+.tour-foot button {
+  flex: 1; font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.12em;
+  padding: 9px 10px; font-size: 10.5px; cursor: pointer; border-radius: 2px;
+  background: transparent; color: var(--muted-2); border: 1px solid var(--line);
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+}
+.tour-foot button:hover:not(:disabled) { background: rgba(255,255,255,0.06); color: var(--text); border-color: var(--line-strong); }
+.tour-foot button:disabled { opacity: 0.3; cursor: default; }
+.tour-next { background: var(--accent) !important; border-color: var(--accent) !important; color: #000 !important; font-weight: 600; }
+.tour-next:hover { background: #d9e2ee !important; }
+
+@media (max-width: 760px) {
+  #info { display: none; }
+  #controls { width: 250px; }
+  .tour-body { font-size: 12px; }
+}
