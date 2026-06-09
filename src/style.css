@@ -212,6 +212,12 @@ body.tour-active .tour-panel { display: flex; }
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px;
 }
 .tour-skip:hover { color: var(--text); }
+/* Collapse toggle — mobile only (hidden on desktop). */
+.tour-collapse {
+  display: none; background: transparent; border: none; cursor: pointer;
+  color: var(--muted); font-size: 14px; line-height: 1; padding: 2px 4px;
+}
+.tour-collapse:hover { color: var(--text); }
 
 /* Language switch (EN / PL) */
 .lang-switch { display: flex; border: 1px solid var(--line); border-radius: 2px; overflow: hidden; margin-left: auto; }
@@ -285,8 +291,42 @@ body.tour-active .tour-panel { display: flex; }
 .tour-next { background: var(--accent) !important; border-color: var(--accent) !important; color: #000 !important; font-weight: 600; }
 .tour-next:hover { background: #d9e2ee !important; }
 
+/* ── Mobile: dock the panels to a compact bottom sheet so they don't cover the
+   (centered) scene. Desktop layout above is untouched. ───────────────────── */
 @media (max-width: 760px) {
   #info { display: none; }
-  #controls { width: 250px; }
-  .tour-body { font-size: 12px; }
+
+  .panel { padding: 12px 14px 14px; }
+
+  /* Guided-tour panel → bottom sheet spanning the width, capped in height so the
+     top ~half of the screen (where the Sun/planets sit) stays clear. */
+  .tour-panel {
+    top: auto; bottom: 10px; left: 10px; right: 10px; width: auto;
+    max-height: 42vh;
+  }
+  .tour-head { margin-bottom: 8px; }
+  .tour-dd { margin-bottom: 10px; }
+  .tour-speed { margin-bottom: 10px; }
+  .tour-body { font-size: 12px; margin: 8px 0 10px; }
+  .tour-title { font-size: 12px; }
+  /* The step dropdown opens upward out of the bottom sheet. */
+  .steps-list { top: auto; bottom: calc(100% + 4px); max-height: 56vh; }
+
+  /* Show the collapse toggle on mobile; collapsed = slim bar, just navigation. */
+  .tour-collapse { display: inline-block; }
+  .tour-panel.collapsed { max-height: none; }
+  .tour-panel.collapsed .tour-dd,
+  .tour-panel.collapsed .tour-title,
+  .tour-panel.collapsed .tour-body,
+  .tour-panel.collapsed .tour-speed { display: none; }
+
+  /* Free-explore controls also dock to the bottom on mobile. */
+  #controls {
+    top: auto; bottom: 10px; left: 10px; right: 10px; width: auto;
+    max-height: 56vh; overflow-y: auto;
+  }
+
+  /* Keep the credits clear of the bottom sheet. */
+  .credit { bottom: auto; top: 8px; }
+  .credit.credit-left { top: 8px; }
 }

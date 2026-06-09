@@ -440,6 +440,7 @@ export class Tour {
           <button class="lang-btn" data-lang="pl">PL</button>
         </div>
         <button class="tour-skip">${UI[this.lang].explore}</button>
+        <button class="tour-collapse" aria-label="Hide description">▾</button>
       </div>
       <div class="tour-dd">
         <button class="tour-dd-toggle"><span class="dd-current"></span><span class="dd-chev">▾</span></button>
@@ -499,6 +500,14 @@ export class Tour {
       else this.go(this.index + 1);
     });
     this.root.querySelector('.tour-skip')!.addEventListener('click', () => this.exit());
+
+    // Mobile: collapse the description to a slim nav-only bar (and back).
+    const collapseBtn = this.root.querySelector('.tour-collapse') as HTMLButtonElement;
+    collapseBtn.addEventListener('click', () => {
+      const collapsed = this.root.classList.toggle('collapsed');
+      collapseBtn.textContent = collapsed ? '▴' : '▾';
+      collapseBtn.setAttribute('aria-label', collapsed ? 'Show description' : 'Hide description');
+    });
 
     // Language switch (EN / PL), persisted to localStorage.
     this.root.querySelectorAll('.lang-btn').forEach((btn) => {
