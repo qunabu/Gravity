@@ -23,8 +23,6 @@ export interface TourStep {
   spin: boolean;        // axial self-rotation of bodies
   axes?: boolean;       // draw rotation-axis lines
   moonLabels?: boolean; // show moon name labels (default true)
-  moonNearSide?: boolean; // mark the Moon's Earth-facing side (tidal-lock demo)
-  moonSize?: number;      // visual exaggeration of the Moon's radius (default 1)
   daysPerSecond: number;
   visible: string[] | null;
   vectors?: { velocity?: boolean; gravity?: boolean; mutual?: boolean; tangent?: boolean };
@@ -181,11 +179,10 @@ export const STEPS: TourStep[] = [
     title: 'The Earth and the Moon',
     body:
       'The same rule nests at every scale. The Moon (1.2% of Earth’s mass) is held by Earth’s gravity, orbiting every 27.3 days at 384 400 km — an orbit within an orbit. ' +
-      'It’s also tidally locked: it turns exactly once per orbit, so the same near side (marked) always faces us — from Earth we never see the far side. ' +
+      'It’s also tidally locked: it turns exactly once per orbit, so the same near side always faces Earth and we never see the far side from here — though that far side, despite the “dark side” nickname, is lit just as often. ' +
       'Switch Physics to “N-body” in the panel later to watch the Moon tug back and both bodies swing around their shared barycenter.',
     scale: 'visual', physics: 'kepler', twoD: true, demo: 'normal',
     showMoons: true, showOrbits: true, showProjection: false, spin: false, daysPerSecond: 4,
-    moonNearSide: true, moonSize: 3,
     visible: ['sun', 'earth', 'moon'], focus: 'earth', focusMul: 16, follow: true, followRaise: 0,
   },
   {
@@ -365,7 +362,7 @@ export const PL: Record<string, { title: string; body: string }> = {
   },
   'earth-moon': {
     title: 'Ziemia i Księżyc',
-    body: 'Ta sama reguła zagnieżdża się na każdej skali. Księżyc (1,2% masy Ziemi) jest utrzymywany grawitacją Ziemi, okrążając ją co 27,3 dnia w odległości 384 400 km — orbita wewnątrz orbity. Jest też zsynchronizowany pływowo: obraca się dokładnie raz na obieg, więc wciąż ta sama strona widoczna (oznaczona) jest zwrócona ku nam — z Ziemi nigdy nie widzimy strony odwróconej. Przełącz później fizykę na „N-body” w panelu, by zobaczyć, jak Księżyc odciąga Ziemię i oba ciała krążą wokół wspólnego środka masy.',
+    body: 'Ta sama reguła zagnieżdża się na każdej skali. Księżyc (1,2% masy Ziemi) jest utrzymywany grawitacją Ziemi, okrążając ją co 27,3 dnia w odległości 384 400 km — orbita wewnątrz orbity. Jest też zsynchronizowany pływowo: obraca się dokładnie raz na obieg, więc wciąż ta sama strona widoczna jest zwrócona ku Ziemi i nigdy nie widzimy stąd strony odwróconej — choć ta strona, mimo przezwiska „ciemna”, jest oświetlana równie często. Przełącz później fizykę na „N-body” w panelu, by zobaczyć, jak Księżyc odciąga Ziemię i oba ciała krążą wokół wspólnego środka masy.',
   },
   'moon-no-fall': {
     title: 'Dlaczego Księżyc nie spada na Ziemię',
@@ -422,8 +419,8 @@ export const PL: Record<string, { title: string; body: string }> = {
 };
 
 const UI = {
-  en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step', nearSide: 'Near side' },
-  pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok', nearSide: 'Strona widoczna' },
+  en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step' },
+  pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok' },
 };
 
 export function stepIndexFromHash(): number {
@@ -613,8 +610,6 @@ export class Tour {
     st.vecAll = false;
     st.vecSun = false;
     this.world.setAutoRotate(false);
-    this.world.setMoonNearSide(false);
-    this.world.setMoonSize(1); // drop any tidal-lock exaggeration
     st.showSpin = true;   // free-explore: bodies rotate
     st.showAxes = false;
     st.showMoonLabels = true;
@@ -751,8 +746,6 @@ export class Tour {
     w.state.vecTarget = step.vecTarget ?? 'earth';
     w.state.vecAll = !!step.vecAll;
     w.state.vecSun = !!step.vecSun;
-    w.setMoonNearSide(!!step.moonNearSide, UI[this.lang].nearSide);
-    w.setMoonSize(step.moonSize ?? 1);
     w.setAutoRotate(!!step.autoRotate);
     w.setCameraReturn(true); // on every tour slide, releasing the mouse eases back to the framing
     w.setZoomEnabled(false);  // no wheel-zoom during the guided tour

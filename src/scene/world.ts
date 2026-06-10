@@ -65,8 +65,6 @@ interface MoonView {
   trailPts: Vector3[];
   spin: number;
   opacity: number;
-  nearMarker?: Mesh;        // dot fixed on the Earth-facing (near) side — shows tidal lock
-  nearLabel?: CSS2DObject;  // "near side" caption on that marker
 }
 
 export interface WorldState {
@@ -91,7 +89,6 @@ export interface WorldState {
   vecTarget: 'earth' | 'moon'; // which orbit the single-subject vectors describe
   vecAll: boolean;             // velocity+gravity arrows on every body (helix)
   vecSun: boolean;             // the Sun's own motion arrow (helix)
-  moonNearSide: boolean;       // mark the Moon's Earth-facing side (tidal-lock demo)
 }
 
 export class World {
@@ -104,7 +101,6 @@ export class World {
   private views: BodyView[] = [];
   private moonViews: MoonView[] = [];
   private scale: ScaleModel;
-  private moonSizeMul = 1; // per-slide visual exaggeration of moon radius (tidal-lock demo)
 
   private nbody!: NBody;
   private simBodies: SimDescriptor[] = [];
@@ -171,7 +167,6 @@ export class World {
     vecTarget: 'earth',
     vecAll: false,
     vecSun: false,
-    moonNearSide: false,
   };
 
   // Teaching-vector objects (created once, toggled per step).
@@ -559,29 +554,7 @@ export class World {
         trail.frustumCulled = false;
         this.scene.add(trail);
 
-        const mvPush: MoonView = { moon, parent: planet, mesh, orbitRelAU, orbitLine, label, trail, trailPts: [], spin: 0, opacity: 0 };
-
-        // Earth's Moon: a marker pinned to the near side (local +Z, which the
-        // tidal-lock rotation keeps pointed at Earth). Watching it stay on the
-        // Earth-facing side as the Moon orbits makes the synchronous rotation
-        // visible even in the top-down view. MeshBasicMaterial so it stays lit
-        // on the night side too.
-        if (moon.id === 'moon') {
-          const marker = new Mesh(
-            new SphereGeometry(0.13, 16, 16),
-            new MeshBasicMaterial({ color: 0xffb84a }),
-          );
-          marker.position.set(0, 0, 1); // surface point on the near side (unit sphere)
-          marker.visible = false;
-          mesh.add(marker);
-          const nlabel = this.makeLabel('Near side', 'vec-label');
-          nlabel.visible = false;
-          marker.add(nlabel);
-          mvPush.nearMarker = marker;
-          mvPush.nearLabel = nlabel;
-        }
-
-        this.moonViews.push(mvPush);
+        this.moonViews.push({ moon, parent: planet, mesh, orbitRelAU, orbitLine, label, trail, trailPts: [], spin: 0, opacity: 0 });
       }
     }
   }
@@ -901,17 +874,9 @@ export class World {
       }
     }
     for (const mv of this.moonViews) {
-      mv.mesh.scale.setScalar(this.scale.bodyRadius(mv.moon.radius, false) * this.moonSizeMul);
+      mv.mesh.scale.setScalar(this.scale.bodyRadius(mv.moon.radius, false));
     }
     this.rebuildOrbits();
-  }
-
-  /** Visually exaggerate the Moon's size (1 = real). Used to make tidal lock readable. */
-  setMoonSize(mul: number): void {
-    this.moonSizeMul = mul;
-    for (const mv of this.moonViews) {
-      mv.mesh.scale.setScalar(this.scale.bodyRadius(mv.moon.radius, false) * mul);
-    }
   }
 
   setPhysics(mode: PhysicsMode): void {
@@ -923,16 +888,6 @@ export class World {
     this.state.showMoons = on;
     // Moon gravity changes the N-body body set, so rebuild it.
     this.buildNBody();
-  }
-
-  /** Show/hide the Moon's near-side marker (tidal-lock demo); `label` localizes its caption. */
-  setMoonNearSide(on: boolean, label?: string): void {
-    this.state.moonNearSide = on;
-    if (label) {
-      for (const mv of this.moonViews) {
-        if (mv.nearLabel) (mv.nearLabel.element as HTMLElement).textContent = label;
-      }
-    }
   }
 
   setTwoD(on: boolean): void {
@@ -2027,12 +1982,6 @@ export class World {
       // a geometric truth that holds even when paused. (this.tmp3 is the
       // parent→moon offset, so the parent lies in the -tmp3 direction.)
       mv.mesh.rotation.y = Math.atan2(-this.tmp3.x, -this.tmp3.z);
-
-      if (mv.nearMarker) {
-        const showMark = s.moonNearSide && mvis;
-        mv.nearMarker.visible = showMark;
-        if (mv.nearLabel) mv.nearLabel.visible = showMark && s.showLabels;
-      }
 
       // Moon real-space trail (helix slide): a coil around the planet's coil.
       if (s.demoMode === 'helix' && mvis) {
