@@ -323,6 +323,7 @@ export class World {
   private accreteBody = 'sun';
   private accreteR = 30;             // initial cloud radius (scene units)
   private accreteFinalR = 3;         // display radius of the forming body
+  private accreteSpin = 0;           // forming body's rotation (spins up as it collapses)
   private accT = 0;                  // 0..1 collapse phase
   private accDuration = 8;           // seconds for a full collapse
   private accreteHold = 0;
@@ -788,6 +789,7 @@ export class World {
   startAccretion(bodyId: string): void {
     this.state.demoMode = 'accretion';
     this.accreteBody = bodyId;
+    this.accreteSpin = 0;
     const sun = bodyId === 'sun';
     this.accreteR = sun ? 34 : 24;
     this.accreteFinalR = sun ? 3.6 : 2.4; // exaggerated for visibility (the
@@ -2698,6 +2700,10 @@ export class World {
       if (accreteTarget) {
         // Stays a near-invisible speck until particles begin reaching center.
         v.mesh.scale.setScalar(this.accreteFinalR * (0.02 + 0.98 * accreteScale));
+        // Conservation of angular momentum: the collapsing cloud spins up, so
+        // the forming body turns faster as it gathers (settling to a calm spin).
+        if (!s.paused) this.accreteSpin += dtReal * (0.2 + 1.3 * accreteScale);
+        v.mesh.rotation.y = this.accreteSpin;
         // A young accreting body starts molten and cools into its real surface:
         // self-illuminate via its own texture (the central light sits inside it)
         // and lerp the glow from hot orange to the planet's natural colors.
