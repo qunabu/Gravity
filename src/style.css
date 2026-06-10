@@ -43,6 +43,16 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 .music-toggle:hover { color: var(--text); border-color: var(--line-strong); }
 .music-toggle.on { color: #05070d; background: var(--accent); border-color: var(--accent); }
 
+/* Side-view tide panel (shown only on the tides slide). */
+.tide2d {
+  position: fixed; left: 14px; bottom: 64px; z-index: 6;
+  width: 240px; height: 164px; padding: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  backdrop-filter: blur(6px);
+}
+.tide2d svg { width: 100%; height: 100%; display: block; }
+@media (max-width: 760px) { .tide2d { width: 180px; height: 124px; bottom: auto; top: 40px; left: 10px; } }
+
 /* First-slide call-to-action: one tap starts music + narrated auto-play.
    Same visual language as the Back/Next buttons (uppercase, hairline, accent
    fill), just standalone and a touch larger. */

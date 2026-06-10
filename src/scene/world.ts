@@ -276,6 +276,7 @@ export class World {
   private tideCity!: Mesh; private tideColumn!: Line; private tideCityLabel!: CSS2DObject;
   private tideMoon!: Mesh; private tideMoonLabel!: CSS2DObject; private tideAxis!: Line;
   private tideRegionLabels: CSS2DObject[] = []; // [high, high, low, low]
+  private tideScene2D!: HTMLElement; private tideWater2D!: SVGRectElement; private tideLabel2D!: Element;
   private exoGroup!: Group;      private exoStar!: Mesh; private exoPlanet!: Mesh; private exoAngle = 0;
   private exoStarTrail!: Line;   private exoStarTrailPts: Vector3[] = [];
   private resGroup!: Group;      private resMoons: Mesh[] = []; private resAngle = 0;
@@ -1500,6 +1501,33 @@ export class World {
       new LineBasicMaterial({ color: 0x6ad6ff, transparent: true, opacity: 0.95 }));
     g.add(this.tideColumn);
     this.tideCityLabel = this.makeLabel('', 'vec-label'); g.add(this.tideCityLabel);
+
+    // A simple side-view "coastline" panel: the sea level rises up the beach
+    // toward the tree at high tide and recedes at low tide. The water level is
+    // driven each frame from the same Moon-alignment as the 3-D model.
+    const el = document.createElement('div');
+    el.className = 'tide2d';
+    el.style.display = 'none';
+    el.innerHTML = `
+      <svg viewBox="0 0 220 150" preserveAspectRatio="xMidYMid meet">
+        <rect x="0" y="0" width="220" height="150" fill="#070b12"/>
+        <circle cx="196" cy="22" r="9" fill="#e9eccb"/>
+        <text x="178" y="40" fill="rgba(233,236,203,0.7)" font-size="7" font-family="sans-serif">Moon</text>
+        <path d="M0,150 L0,120 L110,120 L200,74 L220,74 L220,150 Z" fill="#4a3f29"/>
+        <rect x="183" y="58" width="5" height="24" fill="#6b4a2b"/>
+        <circle cx="185.5" cy="53" r="11" fill="#3f7d4a"/>
+        <line x1="0" y1="70" x2="220" y2="70" stroke="rgba(255,255,255,0.25)" stroke-width="0.6" stroke-dasharray="3 3"/>
+        <line x1="0" y1="116" x2="220" y2="116" stroke="rgba(255,255,255,0.25)" stroke-width="0.6" stroke-dasharray="3 3"/>
+        <text x="4" y="67" fill="rgba(255,255,255,0.45)" font-size="6.5" font-family="sans-serif">HIGH</text>
+        <text x="4" y="113" fill="rgba(255,255,255,0.45)" font-size="6.5" font-family="sans-serif">LOW</text>
+        <rect class="tide2d-water" x="0" y="116" width="220" height="34" fill="#3f86c4" fill-opacity="0.55"/>
+        <text class="tide2d-label" x="10" y="16" fill="#eaf0ff" font-size="9" font-weight="600" font-family="sans-serif">Low tide</text>
+      </svg>`;
+    document.body.appendChild(el);
+    this.tideScene2D = el;
+    this.tideWater2D = el.querySelector('.tide2d-water') as SVGRectElement;
+    this.tideLabel2D = el.querySelector('.tide2d-label')!;
+
     g.visible = false; this.scene.add(g);
     this.tideGroup = g;
   }
@@ -1935,6 +1963,7 @@ export class World {
     this.tideGroup.visible = mode === 'tides';
     this.exoGroup.visible = mode === 'exoplanet';
     this.resGroup.visible = mode === 'resonance';
+    this.tideScene2D.style.display = mode === 'tides' ? 'block' : 'none';
 
     // CSS2D labels are drawn by a separate renderer that doesn't inherit a
     // parent Group's visibility, so toggle each group's labels explicitly.
@@ -2041,7 +2070,15 @@ export class World {
       arr[0] = base.x; arr[1] = 0; arr[2] = base.z; arr[3] = top.x; arr[4] = 0; arr[5] = top.z;
       (this.tideColumn.geometry.getAttribute('position') as Float32BufferAttribute).needsUpdate = true;
       this.tideCityLabel.position.copy(top).add(cityDir.clone().multiplyScalar(1.0));
-      (this.tideCityLabel.element as HTMLElement).textContent = Math.abs(cosA) > 0.5 ? 'High tide' : 'Low tide';
+      const isHigh = Math.abs(cosA) > 0.5;
+      (this.tideCityLabel.element as HTMLElement).textContent = isHigh ? 'High tide' : 'Low tide';
+      // Side-view panel: raise/lower the sea between the LOW (y=116) and HIGH
+      // (y=70) marks, tracking the city's tide level (|cosA|).
+      const lvl = Math.abs(cosA);
+      const y = 116 - (116 - 70) * lvl;
+      this.tideWater2D.setAttribute('y', y.toFixed(1));
+      this.tideWater2D.setAttribute('height', (150 - y).toFixed(1));
+      this.tideLabel2D.textContent = isHigh ? 'High tide' : 'Low tide';
     } else if (mode === 'exoplanet') {
       if (!paused) this.exoAngle += dtReal * 0.8;
       const d = 9, mS = 1, mP = 0.12, rS = d * mP / (mS + mP), rP = d * mS / (mS + mP);
