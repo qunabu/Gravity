@@ -314,6 +314,105 @@ export const STEPS: TourStep[] = [
     showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
     visible: ['sun'],
   },
+  {
+    id: 'tides',
+    title: 'Tides: why the sea breathes twice a day',
+    body:
+      'Gravity weakens with distance, so the Moon pulls the ocean on Earth’s near side harder than the planet’s center, and the center harder than the far side. That difference — the tidal force — stretches the oceans into two bulges, one facing the Moon and one directly opposite. Earth rotates through both each day, so most coasts get two high tides and two lows. The same stretching, over eons, is what locked the Moon’s spin to its orbit.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'tides',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'lagrange',
+    title: 'Lagrange points: parking spots in space',
+    body:
+      'In a two-body system there are five points where the Sun’s and Earth’s gravity, plus the orbital motion, balance so neatly that a small object can hold station. L1 (between us and the Sun) and L2 (in Earth’s shadow direction) host great observatories — SOHO at L1, the James Webb telescope at L2. L4 and L5, sixty degrees ahead of and behind a planet, are stable enough to trap asteroids: Jupiter’s Trojans cluster there in their thousands.',
+    scale: 'visual', physics: 'kepler', twoD: true, demo: 'lagrange',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'resonance',
+    title: 'Orbital resonance: gravity keeping time',
+    body:
+      'When orbital periods line up in small whole-number ratios, repeated gentle tugs add up instead of cancelling. Jupiter’s three inner Galilean moons are locked in a 1:2:4 Laplace resonance — Io laps Europa exactly twice for every lap Europa makes of Ganymede. The same drumbeat carves the Kirkwood gaps in the asteroid belt and shepherds the rings of Saturn. Watch the moons return to alignment again and again.',
+    scale: 'visual', physics: 'kepler', twoD: true, demo: 'resonance',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'exoplanet',
+    title: 'How we find other worlds',
+    body:
+      'A planet doesn’t simply orbit its star — both swing around their shared center of mass, the barycenter. The star traces a tiny circle in response to the planet’s pull. We can’t see most exoplanets directly, but we can detect that wobble: the star’s light shifts blue then red as it approaches and recedes. Jupiter makes our own Sun loop by about its own radius; that telltale dance is how thousands of distant worlds were discovered.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'exoplanet',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'lensing',
+    title: 'Bending starlight',
+    body:
+      'If mass curves spacetime, then even light — which has no mass — must follow that curve. Einstein predicted the Sun would deflect the light of stars passing near its edge, shifting their apparent positions. During the total eclipse of 1919, Eddington measured exactly that bend, and Einstein became world-famous overnight. Today this “gravitational lensing” turns whole galaxies into cosmic magnifying glasses. Here a star sits directly behind the Sun, yet we see it offset — its light bent around the mass.',
+    scale: 'visual', physics: 'kepler', twoD: true, demo: 'lensing',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'black-hole',
+    title: 'Black holes: a well with no bottom',
+    body:
+      'Pack enough mass into a small enough space and the spacetime well becomes bottomless. Inside the event horizon, escape would require travelling faster than light — so nothing, not even light, gets out. Just outside, gas spirals in and heats to millions of degrees, blazing as an accretion disk, while light itself can circle the hole in the razor-thin photon ring. This is the same falling-and-curving you’ve watched all tour, pushed to its absolute extreme.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'blackhole',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'gravitational-waves',
+    title: 'Gravitational waves: ripples in spacetime',
+    body:
+      'When two black holes spiral together, their violent dance shakes spacetime itself, sending ripples outward at the speed of light. As they inspiral, the orbit tightens and quickens until they merge in a final chirp. In 2015 the LIGO detectors caught such a wave from two black holes that collided 1.3 billion years ago — stretching their 4-kilometre arms by less than a thousandth the width of a proton. A century after Einstein predicted them, we finally heard the universe ring.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'gwaves',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'time-dilation',
+    title: 'Time runs slower in gravity',
+    body:
+      'Mass doesn’t just curve space — it slows time. A clock deep in a gravity well ticks slower than one far away. The effect is tiny on Earth, but real: this is why GPS satellites, higher up in a weaker field, must correct their clocks by about 38 microseconds a day — otherwise navigation would drift kilometres off within hours. Here the clock beside the mass falls steadily behind the distant one. Gravity and time are the same story.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'timedilation',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'milky-way',
+    title: 'The Milky Way and the galactic year',
+    body:
+      'Pull back further than any orbit so far. Our Sun is one of a few hundred billion stars in the Milky Way, riding a spiral arm about two-thirds of the way out from the center. It orbits the galaxy at roughly 230 kilometres per second — yet the galaxy is so vast that one lap, a “galactic year”, takes about 230 million years. The last time the Sun was here, dinosaurs were just beginning. The same gravity that holds a moon holds a galaxy together.',
+    scale: 'visual', physics: 'kepler', twoD: false, demo: 'milkyway',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'sagittarius-a',
+    title: 'Sagittarius A*: the monster at the center',
+    body:
+      'At the heart of the Milky Way lurks a supermassive black hole, Sagittarius A*, with the mass of about four million Suns. We know it’s there because we’ve watched stars whip around it for decades. The star S2 swings past on a wild ellipse every sixteen years, reaching 3% of the speed of light at closest approach — pure Kepler-and-Einstein motion around an invisible point. Those orbits won a Nobel Prize and weighed the unseen giant.',
+    scale: 'visual', physics: 'kepler', twoD: true, demo: 'sgra',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
+  {
+    id: 'dark-matter',
+    title: 'The missing mass',
+    body:
+      'Here gravity hands us a mystery. By the very law from slide one, stars far from a galaxy’s center should orbit slower than those close in — just as Neptune crawls while Mercury races. But they don’t: the outer stars move just as fast as the inner ones, their speed curve staying stubbornly flat. The only fix is enormous amounts of unseen mass — “dark matter” — outweighing all the stars five to one. We’ve mapped the whole solar system, yet most of the universe is still something we cannot see.',
+    scale: 'visual', physics: 'kepler', twoD: true, demo: 'darkmatter',
+    showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
+    visible: [],
+  },
 ];
 
 export type Lang = 'en' | 'pl';
@@ -415,6 +514,50 @@ export const PL: Record<string, { title: string; body: string }> = {
   'mercury-precession': {
     title: 'Dowód: orbita Merkurego się obraca',
     body: 'Tu kończy się filozofia. Eliptyczna orbita Merkurego się nie domyka — jej peryhelium (punkt najbliższy Słońcu) z każdym okrążeniem nieco się przesuwa. Newton, uwzględniając przyciąganie pozostałych planet, przewiduje większość tego ruchu, ale brakuje mu 43 sekund kątowych na stulecie. Ta drobna różnica przez dziesięciolecia pozostawała niewyjaśniona — aż ogólna teoria względności przewidziała dokładnie 43″. Zakrzywiona czasoprzestrzeń Słońca obraca orbitę. Tutaj efekt jest mocno wyolbrzymiony, byś mógł zobaczyć, jak elipsa się obraca i kreśli rozetę; niebieska linia wskazuje przesuwające się peryhelium.',
+  },
+  'tides': {
+    title: 'Pływy: dlaczego morze oddycha dwa razy na dobę',
+    body: 'Grawitacja słabnie z odległością, więc Księżyc przyciąga ocean po bliższej stronie Ziemi silniej niż jej środek, a środek silniej niż stronę daleką. Ta różnica — siła pływowa — rozciąga oceany w dwa wybrzuszenia: jedno zwrócone ku Księżycowi, drugie dokładnie przeciwnie. Ziemia obraca się przez oba w ciągu doby, więc większość wybrzeży ma dwa przypływy i dwa odpływy. To samo rozciąganie przez eony zsynchronizowało obrót Księżyca z jego orbitą.',
+  },
+  'lagrange': {
+    title: 'Punkty Lagrange’a: parkingi w przestrzeni',
+    body: 'W układzie dwóch ciał istnieje pięć punktów, w których grawitacja Słońca i Ziemi oraz ruch orbitalny równoważą się tak dokładnie, że mały obiekt może utrzymać pozycję. L1 (między nami a Słońcem) i L2 (po nocnej stronie Ziemi) goszczą wielkie obserwatoria — SOHO w L1, teleskop Jamesa Webba w L2. L4 i L5, sześćdziesiąt stopni przed planetą i za nią, są na tyle stabilne, że więżą asteroidy: trojańczyki Jowisza gromadzą się tam tysiącami.',
+  },
+  'resonance': {
+    title: 'Rezonans orbitalny: grawitacja wybija rytm',
+    body: 'Gdy okresy obiegu układają się w proste stosunki liczb całkowitych, powtarzające się delikatne szarpnięcia sumują się, zamiast znosić. Trzy wewnętrzne księżyce galileuszowe Jowisza tkwią w rezonansie Laplace’a 1:2:4 — Io okrąża planetę dokładnie dwa razy na każde okrążenie Europy i cztery na każde Ganimedesa. Ten sam rytm żłobi przerwy Kirkwooda w pasie planetoid i porządkuje pierścienie Saturna. Patrz, jak księżyce wracają do tej samej konfiguracji raz po raz.',
+  },
+  'exoplanet': {
+    title: 'Jak znajdujemy inne światy',
+    body: 'Planeta nie krąży po prostu wokół gwiazdy — oba ciała obiegają wspólny środek masy, barycentrum. Gwiazda kreśli maleńkie kółko w odpowiedzi na przyciąganie planety. Większości egzoplanet nie widzimy wprost, ale potrafimy wykryć to drżenie: światło gwiazdy przesuwa się ku błękitowi, gdy się zbliża, i ku czerwieni, gdy oddala. Jowisz sprawia, że nasze Słońce zatacza pętlę wielkości jego własnego promienia; właśnie ten taniec pozwolił odkryć tysiące odległych światów.',
+  },
+  'lensing': {
+    title: 'Zaginanie światła gwiazd',
+    body: 'Skoro masa zakrzywia czasoprzestrzeń, to nawet światło — które nie ma masy — musi podążać za tym zakrzywieniem. Einstein przewidział, że Słońce odchyli światło gwiazd przechodzące tuż obok jego brzegu, przesuwając ich pozorne położenia. Podczas całkowitego zaćmienia w 1919 roku Eddington zmierzył dokładnie takie ugięcie i Einstein z dnia na dzień stał się sławny na cały świat. Dziś to „soczewkowanie grawitacyjne” zamienia całe galaktyki w kosmiczne szkła powiększające. Tu gwiazda jest dokładnie za Słońcem, a jednak widzimy ją przesuniętą — jej światło zostało zagięte wokół masy.',
+  },
+  'black-hole': {
+    title: 'Czarne dziury: studnia bez dna',
+    body: 'Upakuj dość masy w dostatecznie małej przestrzeni, a studnia czasoprzestrzeni stanie się bezdenna. Wewnątrz horyzontu zdarzeń ucieczka wymagałaby prędkości większej od światła — więc nic, nawet światło, nie wydostaje się na zewnątrz. Tuż obok gaz spada po spirali i rozgrzewa się do milionów stopni, płonąc jako dysk akrecyjny, a samo światło potrafi okrążać dziurę w cienkim jak brzytwa pierścieniu fotonowym. To ten sam spadek i zakrzywienie, które oglądasz przez cały przewodnik, doprowadzone do absolutnej skrajności.',
+  },
+  'gravitational-waves': {
+    title: 'Fale grawitacyjne: zmarszczki czasoprzestrzeni',
+    body: 'Gdy dwie czarne dziury spadają ku sobie po spirali, ich gwałtowny taniec wstrząsa samą czasoprzestrzenią, wysyłając zmarszczki rozchodzące się z prędkością światła. W miarę zbliżania orbita zacieśnia się i przyspiesza, aż do końcowego „ćwierknięcia” przy zlaniu. W 2015 roku detektory LIGO złapały taką falę z dwóch czarnych dziur, które zderzyły się 1,3 miliarda lat temu — rozciągając swoje 4-kilometrowe ramiona o mniej niż tysięczną część szerokości protonu. Sto lat po przewidywaniu Einsteina wreszcie usłyszeliśmy, jak wszechświat dzwoni.',
+  },
+  'time-dilation': {
+    title: 'W grawitacji czas płynie wolniej',
+    body: 'Masa nie tylko zakrzywia przestrzeń — spowalnia czas. Zegar głęboko w studni grawitacyjnej tyka wolniej niż ten daleko od niej. Na Ziemi efekt jest maleńki, ale realny: dlatego zegary satelitów GPS, wyżej i w słabszym polu, muszą być korygowane o około 38 mikrosekund na dobę — inaczej nawigacja w kilka godzin pomyliłaby się o kilometry. Tutaj zegar przy masie systematycznie zostaje w tyle za odległym. Grawitacja i czas to ta sama opowieść.',
+  },
+  'milky-way': {
+    title: 'Droga Mleczna i rok galaktyczny',
+    body: 'Cofnij się dalej niż w jakiejkolwiek dotychczasowej orbicie. Nasze Słońce to jedna z kilkuset miliardów gwiazd Drogi Mlecznej, sunąca po ramieniu spiralnym mniej więcej w dwóch trzecich drogi od środka. Okrąża galaktykę z prędkością około 230 kilometrów na sekundę — a jednak galaktyka jest tak ogromna, że jedno okrążenie, „rok galaktyczny”, trwa około 230 milionów lat. Gdy Słońce było tu ostatnio, dinozaury dopiero się zaczynały. Ta sama grawitacja, która trzyma księżyc, spaja całą galaktykę.',
+  },
+  'sagittarius-a': {
+    title: 'Sagittarius A*: potwór w centrum',
+    body: 'W sercu Drogi Mlecznej czai się supermasywna czarna dziura, Sagittarius A*, o masie około czterech milionów Słońc. Wiemy, że tam jest, bo od dziesięcioleci obserwujemy gwiazdy okrążające ją z zawrotną prędkością. Gwiazda S2 przemyka po dzikiej elipsie co szesnaście lat, osiągając w peryhelium 3% prędkości światła — czysty ruch Keplera i Einsteina wokół niewidzialnego punktu. Te orbity przyniosły Nagrodę Nobla i pozwoliły zważyć niewidzialnego olbrzyma.',
+  },
+  'dark-matter': {
+    title: 'Brakująca masa',
+    body: 'Tu grawitacja stawia nas wobec zagadki. Według tego samego prawa z pierwszego slajdu gwiazdy daleko od środka galaktyki powinny krążyć wolniej niż te bliżej — tak jak Neptun się wlecze, a Merkury pędzi. A jednak tak nie jest: zewnętrzne gwiazdy poruszają się równie szybko jak wewnętrzne, a ich krzywa prędkości pozostaje uparcie płaska. Jedyne wyjaśnienie to ogromne ilości niewidzialnej masy — „ciemnej materii” — przeważającej nad wszystkimi gwiazdami pięć do jednego. Zmapowaliśmy cały Układ Słoneczny, a większość wszechświata wciąż jest czymś, czego nie potrafimy zobaczyć.',
   },
 };
 
@@ -820,6 +963,28 @@ export class Tour {
       w.startSpacetime();
     } else if (step.demo === 'precession') {
       w.startPrecession();
+    } else if (step.demo === 'blackhole') {
+      w.startBlackHole();
+    } else if (step.demo === 'gwaves') {
+      w.startGravWaves();
+    } else if (step.demo === 'lensing') {
+      w.startLensing();
+    } else if (step.demo === 'timedilation') {
+      w.startTimeDilation();
+    } else if (step.demo === 'milkyway') {
+      w.startMilkyWay();
+    } else if (step.demo === 'sgra') {
+      w.startSgrA();
+    } else if (step.demo === 'darkmatter') {
+      w.startDarkMatter();
+    } else if (step.demo === 'lagrange') {
+      w.startLagrange();
+    } else if (step.demo === 'tides') {
+      w.startTides();
+    } else if (step.demo === 'exoplanet') {
+      w.startExoplanet();
+    } else if (step.demo === 'resonance') {
+      w.startResonance();
     } else {
       w.setDemo(step.demo);
       if (step.frameAU != null) w.frameRadius(step.frameAU);

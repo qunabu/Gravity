@@ -4,7 +4,7 @@ import {
   Group, ConeGeometry, CylinderGeometry, BoxGeometry,
   PointLight, AmbientLight, BufferGeometry, LineBasicMaterial, Line,
   Float32BufferAttribute, AdditiveBlending, BackSide, Points,
-  PointsMaterial, RingGeometry, DoubleSide, MathUtils, ArrowHelper,
+  PointsMaterial, RingGeometry, TorusGeometry, DoubleSide, MathUtils, ArrowHelper,
   LineDashedMaterial, EdgesGeometry, LineSegments, Raycaster, Vector2,
   CatmullRomCurve3, WireframeGeometry,
   type ColorRepresentation,
@@ -32,7 +32,11 @@ function eclToScene(v: Vector3, out: Vector3): Vector3 {
 export type PhysicsMode = 'kepler' | 'nbody';
 export type DemoMode =
   | 'normal' | 'inertia' | 'accretion' | 'helix' | 'orbit-intro' | 'rocket'
-  | 'soi' | 'flyby' | 'spacetime' | 'precession';
+  | 'soi' | 'flyby' | 'spacetime' | 'precession'
+  // Extended "extreme gravity / cosmic scale" arc:
+  | 'blackhole' | 'gwaves' | 'lensing' | 'timedilation'
+  | 'milkyway' | 'sgra' | 'darkmatter'
+  | 'lagrange' | 'tides' | 'exoplanet' | 'resonance';
 
 interface BodyView {
   body: Body;
@@ -250,6 +254,29 @@ export class World {
   private readonly precessA = 8.5;
   private readonly precessE = 0.45;
 
+  // ---- extended "extreme gravity / cosmic scale" demos --------------------
+  // Each demo's objects live in a Group, built once (hidden) and toggled +
+  // animated by updateExtras() based on the current demoMode.
+  private bhGroup!: Group;       private bhDisk!: Mesh;          // black hole + accretion disk
+  private gwGroup!: Group;       private gwA!: Mesh; private gwB!: Mesh; private gwRings: Line[] = [];
+  private gwPhase = 0;           private gwInspiral = 0;
+  private lensGroup!: Group;     private lensPulse!: Mesh; private lensPulsePath: Vector3[] = [];
+  private lensPulseT = 0;
+  private tdGroup!: Group;       private tdNearHand!: Line; private tdFarHand!: Line;
+  private tdNearLabel!: CSS2DObject; private tdFarLabel!: CSS2DObject;
+  private tdNear = 0;            private tdFar = 0;
+  private mwGroup!: Group;       private mwDisk!: Points; private mwSun!: Mesh; private mwSunLabel!: CSS2DObject;
+  private mwAngle = 0;
+  private sgrGroup!: Group;      private sgrStar!: Mesh; private sgrTrail!: Line; private sgrTrailPts: Vector3[] = [];
+  private sgrLabel!: CSS2DObject; private sgrM = 0;
+  private readonly sgrA = 11;    private readonly sgrE = 0.88;
+  private dmGroup!: Group;       private dmStars: { mesh: Mesh; r: number; angle: number; obs: ArrowHelper; ghost: ArrowHelper }[] = [];
+  private lagGroup!: Group;
+  private tideGroup!: Group;     private tideEarth!: Mesh; private tideBulge!: Mesh; private tideMoonAngle = 0; private tideSpin = 0;
+  private exoGroup!: Group;      private exoStar!: Mesh; private exoPlanet!: Mesh; private exoAngle = 0;
+  private exoStarTrail!: Line;   private exoStarTrailPts: Vector3[] = [];
+  private resGroup!: Group;      private resMoons: Mesh[] = []; private resAngle = 0;
+
   // Explosion burst when a rocket crashes into the planet.
   private boom!: Points;
   private boomPos!: Float32Array;
@@ -346,6 +373,7 @@ export class World {
     this.buildAstro();
     this.buildSpacetime();
     this.buildPrecession();
+    this.buildExtras();
     this.buildNBody();
     this.resize();
     window.addEventListener('resize', () => this.resize());
@@ -1163,6 +1191,319 @@ export class World {
     this.precessLabel.visible = false; this.scene.add(this.precessLabel);
   }
 
+  // ---- extended demos: builders ------------------------------------------
+
+  /** Points of a circle of radius r in the X–Z plane (for orbits / ripples). */
+  private circlePoints(r: number, segs = 96, y = 0): Vector3[] {
+    const pts: Vector3[] = [];
+    for (let i = 0; i <= segs; i++) {
+      const a = (i / segs) * Math.PI * 2;
+      pts.push(new Vector3(Math.cos(a) * r, y, Math.sin(a) * r));
+    }
+    return pts;
+  }
+  private circleLine(r: number, color: number, opacity = 0.5): Line {
+    return new Line(new BufferGeometry().setFromPoints(this.circlePoints(r)),
+      new LineBasicMaterial({ color, transparent: true, opacity }));
+  }
+
+  /** Build every extended-demo overlay once (hidden); toggled by updateExtras. */
+  private buildExtras(): void {
+    this.buildBlackHole();
+    this.buildGravWaves();
+    this.buildLensing();
+    this.buildTimeDilation();
+    this.buildMilkyWay();
+    this.buildSgrA();
+    this.buildDarkMatter();
+    this.buildLagrange();
+    this.buildTides();
+    this.buildExoplanet();
+    this.buildResonance();
+  }
+
+  /** A warped grid funnel of the given depth/width, like the spacetime sheet. */
+  private warpGrid(depth: number, r0: number, color: number, opacity: number): Group {
+    const g = new Group();
+    const ext = 26, stepG = 2.6, seg = 64;
+    const mat = new LineBasicMaterial({ color, transparent: true, opacity });
+    const well = (r: number) => -depth / (1 + (r / r0) * (r / r0));
+    const lineAlong = (fixed: number, axis: 'x' | 'z') => {
+      const pts: Vector3[] = [];
+      for (let j = 0; j <= seg; j++) {
+        const v = -ext + 2 * ext * (j / seg);
+        const x = axis === 'x' ? v : fixed, z = axis === 'x' ? fixed : v;
+        pts.push(new Vector3(x, well(Math.hypot(x, z)), z));
+      }
+      g.add(new Line(new BufferGeometry().setFromPoints(pts), mat));
+    };
+    for (let q = -ext; q <= ext + 0.01; q += stepG) { lineAlong(q, 'x'); lineAlong(q, 'z'); }
+    return g;
+  }
+
+  private buildBlackHole(): void {
+    const depth = 13;
+    const g = this.warpGrid(depth, 3.2, 0x7a5cff, 0.4);
+    const yc = -depth; // well(0)
+    // Event horizon: a pure-black sphere.
+    const horizon = new Mesh(new SphereGeometry(2.2, 32, 32), new MeshBasicMaterial({ color: 0x000000 }));
+    horizon.position.set(0, yc + 2.4, 0);
+    g.add(horizon);
+    // Accretion disk: a glowing ring lying around the horizon, tilted.
+    this.bhDisk = new Mesh(
+      new RingGeometry(2.7, 7.5, 80, 1),
+      new MeshBasicMaterial({ color: 0xff8a3c, side: DoubleSide, transparent: true, opacity: 0.8, blending: AdditiveBlending }),
+    );
+    this.bhDisk.rotation.x = -Math.PI / 2 + 0.32; // lay flat, slight tilt
+    this.bhDisk.position.copy(horizon.position);
+    g.add(this.bhDisk);
+    // Photon ring: a thin bright halo hugging the horizon.
+    const photon = new Mesh(
+      new TorusGeometry(2.45, 0.07, 12, 64),
+      new MeshBasicMaterial({ color: 0xfff1d0, transparent: true, opacity: 0.9, blending: AdditiveBlending }),
+    );
+    photon.rotation.x = -Math.PI / 2 + 0.32;
+    photon.position.copy(horizon.position);
+    g.add(photon);
+    g.visible = false; this.scene.add(g);
+    this.bhGroup = g;
+  }
+
+  private buildGravWaves(): void {
+    const g = new Group();
+    const bhMat = () => new MeshBasicMaterial({ color: 0x0a0a12 });
+    const halo = (m: Mesh) => { const h = new Mesh(new SphereGeometry(1.05, 20, 20), new MeshBasicMaterial({ color: 0x8a7bff, transparent: true, opacity: 0.5, blending: AdditiveBlending, side: BackSide })); m.add(h); };
+    this.gwA = new Mesh(new SphereGeometry(0.9, 24, 24), bhMat()); halo(this.gwA); g.add(this.gwA);
+    this.gwB = new Mesh(new SphereGeometry(0.9, 24, 24), bhMat()); halo(this.gwB); g.add(this.gwB);
+    // Outgoing ripples: a pool of unit circles scaled out each frame.
+    this.gwRings = [];
+    for (let i = 0; i < 7; i++) {
+      const ring = this.circleLine(1, 0x6ad6ff, 0.5);
+      g.add(ring); this.gwRings.push(ring);
+    }
+    g.visible = false; this.scene.add(g);
+    this.gwGroup = g;
+  }
+
+  private buildLensing(): void {
+    const g = new Group();
+    // Schematic in the X–Z plane (viewed top-down): Sun at origin, observer at
+    // +X, the true star far at -X (directly behind the Sun); light grazing the
+    // Sun bends, so the star *appears* offset (+Z).
+    const sun = new Mesh(new SphereGeometry(2.0, 32, 32),
+      new MeshStandardMaterial({ color: 0xffb056, emissive: 0xff7b22, emissiveIntensity: 0.9, roughness: 1 }));
+    g.add(sun);
+    g.add(this.makeStar(-22, 0, 0xffffff));            // true star (on axis)
+    g.add(this.makeStar(-22, 7.5, 0x9fc6ff));          // apparent star (offset)
+    const observer = new Mesh(new SphereGeometry(0.7, 20, 20), new MeshStandardMaterial({ color: 0x6fa8ff, emissive: 0x1f3f6b, emissiveIntensity: 0.6 }));
+    observer.position.set(20, 0, 0); g.add(observer);
+    // Bent light path (star → grazes Sun's top → observer).
+    const bent = new CatmullRomCurve3([
+      new Vector3(-22, 0, 0), new Vector3(-8, 0, 2.4), new Vector3(0, 0, 3.1),
+      new Vector3(8, 0, 2.4), new Vector3(20, 0, 0),
+    ]).getPoints(80);
+    g.add(new Line(new BufferGeometry().setFromPoints(bent), new LineBasicMaterial({ color: 0xffe08a, transparent: true, opacity: 0.85 })));
+    // Apparent line of sight (observer → apparent star), dashed.
+    const dash = (a: Vector3, b: Vector3, color: number) => {
+      const l = new Line(new BufferGeometry().setFromPoints([a, b]), new LineDashedMaterial({ color, dashSize: 0.9, gapSize: 0.6, transparent: true, opacity: 0.5 }));
+      l.computeLineDistances(); return l;
+    };
+    g.add(dash(new Vector3(20, 0, 0), new Vector3(-22, 0, 7.5), 0x9fc6ff));
+    g.add(dash(new Vector3(20, 0, 0), new Vector3(-22, 0, 0), 0x556074)); // true (blocked) sightline
+    // A light pulse that travels the bent path.
+    this.lensPulsePath = bent;
+    this.lensPulse = new Mesh(new SphereGeometry(0.35, 16, 16), new MeshBasicMaterial({ color: 0xfff1d0, blending: AdditiveBlending }));
+    g.add(this.lensPulse);
+    // Labels.
+    const lab = (text: string, x: number, z: number) => { const l = this.makeLabel(text, 'vec-label'); l.position.set(x, 0, z); g.add(l); return l; };
+    lab('Sun', 0, -3.2); lab('True position', -22, -2.4); lab('Apparent position', -22, 10);
+    lab('Observer', 20, -2.2);
+    g.visible = false; this.scene.add(g);
+    this.lensGroup = g;
+  }
+
+  private makeStar(x: number, z: number, color: number): Mesh {
+    const m = new Mesh(new SphereGeometry(0.55, 16, 16), new MeshBasicMaterial({ color, blending: AdditiveBlending }));
+    m.position.set(x, 0, z); return m;
+  }
+
+  private buildTimeDilation(): void {
+    const g = new Group();
+    g.add(this.warpGrid(16, 3.4, 0x49a6ff, 0.32));
+    const yc = -16;
+    const mass = new Mesh(new SphereGeometry(2.4, 32, 32),
+      new MeshStandardMaterial({ color: 0xbfc6d4, emissive: 0x33405a, emissiveIntensity: 0.5, roughness: 1 }));
+    mass.position.set(0, yc + 2.0, 0); g.add(mass);
+    // Two clocks: one deep in the well (near), one far out.
+    const clock = (x: number, y: number): Line => {
+      const ring = this.circleLine(1.1, 0xffffff, 0.6); ring.position.set(x, y, 0); ring.rotation.x = -Math.PI / 2; g.add(ring);
+      const hand = new Line(new BufferGeometry().setFromPoints([new Vector3(0, 0, 0), new Vector3(0, 0, -1.0)]),
+        new LineBasicMaterial({ color: 0x9fc6ff }));
+      hand.position.set(x, y + 0.02, 0); hand.rotation.x = -Math.PI / 2; g.add(hand);
+      return hand;
+    };
+    this.tdNearHand = clock(0, yc + 5.2);     // near the mass (deep in the well)
+    this.tdFarHand = clock(18, -1);           // far away (shallow)
+    this.tdNearLabel = this.makeLabel('', 'vec-label'); this.tdNearLabel.position.set(0, yc + 7.4, 0); g.add(this.tdNearLabel);
+    this.tdFarLabel = this.makeLabel('', 'vec-label'); this.tdFarLabel.position.set(18, 1.6, 0); g.add(this.tdFarLabel);
+    g.visible = false; this.scene.add(g);
+    this.tdGroup = g;
+  }
+
+  private buildMilkyWay(): void {
+    const g = new Group();
+    const N = 6000, maxR = 30, arms = 2, wind = 2.6;
+    const pos = new Float32Array(N * 3);
+    const col = new Float32Array(N * 3);
+    for (let i = 0; i < N; i++) {
+      const t = Math.pow(Math.random(), 0.6); // denser toward center
+      const r = t * maxR;
+      const arm = i % arms;
+      const spread = (Math.random() - 0.5) * (0.6 + 0.8 * t);
+      const ang = arm * (Math.PI * 2 / arms) + r * (wind / maxR) + spread;
+      const bulge = Math.max(0, 1 - r / 6);
+      const y = (Math.random() - 0.5) * (0.6 + bulge * 4);
+      pos[i * 3] = Math.cos(ang) * r; pos[i * 3 + 1] = y; pos[i * 3 + 2] = Math.sin(ang) * r;
+      const warm = bulge; // center warmer, arms bluer
+      col[i * 3] = 0.6 + 0.4 * warm; col[i * 3 + 1] = 0.6 + 0.2 * warm; col[i * 3 + 2] = 0.9 - 0.3 * warm;
+    }
+    const geo = new BufferGeometry();
+    geo.setAttribute('position', new Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new Float32BufferAttribute(col, 3));
+    this.mwDisk = new Points(geo, new PointsMaterial({ size: 0.22, vertexColors: true, transparent: true, opacity: 0.9, blending: AdditiveBlending, depthWrite: false }));
+    g.add(this.mwDisk);
+    // The Sun, ~2/3 of the way out.
+    this.mwSun = new Mesh(new SphereGeometry(0.5, 16, 16), new MeshBasicMaterial({ color: 0xfff2c0, blending: AdditiveBlending }));
+    this.mwSun.position.set(19, 0, 0); this.mwDisk.add(this.mwSun); // rides with the disk's rotation
+    this.mwSunLabel = this.makeLabel('Sun', 'vec-label'); this.mwSunLabel.position.set(19, 1.4, 0); this.mwDisk.add(this.mwSunLabel);
+    g.visible = false; this.scene.add(g);
+    this.mwGroup = g;
+  }
+
+  private buildSgrA(): void {
+    const g = new Group();
+    const bh = new Mesh(new SphereGeometry(1.1, 28, 28), new MeshBasicMaterial({ color: 0x000000 }));
+    g.add(bh);
+    const ring = new Mesh(new TorusGeometry(1.25, 0.06, 12, 48), new MeshBasicMaterial({ color: 0xffd27a, transparent: true, opacity: 0.9, blending: AdditiveBlending }));
+    ring.rotation.x = -Math.PI / 2; g.add(ring);
+    this.sgrStar = new Mesh(new SphereGeometry(0.45, 20, 20), new MeshBasicMaterial({ color: 0x9fc6ff, blending: AdditiveBlending }));
+    g.add(this.sgrStar);
+    const tg = new BufferGeometry();
+    tg.setAttribute('position', new Float32BufferAttribute(new Float32Array(this.maxTrail * 3), 3));
+    tg.setDrawRange(0, 0);
+    this.sgrTrail = new Line(tg, new LineBasicMaterial({ color: 0x6fa0e0, transparent: true, opacity: 0.7 }));
+    this.sgrTrail.frustumCulled = false; g.add(this.sgrTrail);
+    this.sgrLabel = this.makeLabel('S2', 'vec-label'); g.add(this.sgrLabel);
+    const c = this.makeLabel('Sgr A*', 'vec-label'); c.position.set(0, 0, -2.4); g.add(c);
+    g.visible = false; this.scene.add(g);
+    this.sgrGroup = g;
+  }
+
+  private buildDarkMatter(): void {
+    const g = new Group();
+    g.add(this.circleLine(0.001, 0x000000, 0)); // keep group non-empty if list changes
+    const radii = [4, 6.5, 9, 11.5, 14, 16.5];
+    this.dmStars = [];
+    for (const r of radii) {
+      g.add(this.circleLine(r, 0x394056, 0.35));
+      const mesh = new Mesh(new SphereGeometry(0.45, 16, 16), new MeshBasicMaterial({ color: 0xeaf0ff, blending: AdditiveBlending }));
+      g.add(mesh);
+      const obs = new ArrowHelper(new Vector3(0, 0, 1), new Vector3(), 3, 0x6ad6ff, 0.9, 0.5);
+      const ghost = new ArrowHelper(new Vector3(0, 0, 1), new Vector3(), 3, 0xff8a3c, 0.9, 0.5);
+      this.setArrowOpacity(obs, 0.95); this.setArrowOpacity(ghost, 0.35);
+      g.add(obs); g.add(ghost);
+      this.dmStars.push({ mesh, r, angle: Math.random() * Math.PI * 2, obs, ghost });
+    }
+    const l1 = this.makeLabel('● observed — flat', 'vec-label'); l1.position.set(-15, 0, -16); g.add(l1);
+    const l2 = this.makeLabel('● expected — Keplerian', 'vec-label'); l2.position.set(-15, 0, -13.5); g.add(l2);
+    g.visible = false; this.scene.add(g);
+    this.dmGroup = g;
+  }
+
+  private buildLagrange(): void {
+    const g = new Group();
+    const R = 14;
+    g.add(this.circleLine(R, 0x394056, 0.4)); // Earth's orbit
+    const sun = new Mesh(new SphereGeometry(2.0, 32, 32), new MeshStandardMaterial({ color: 0xffb056, emissive: 0xff7b22, emissiveIntensity: 0.9, roughness: 1 }));
+    g.add(sun);
+    const earth = new Mesh(new SphereGeometry(0.8, 24, 24), new MeshStandardMaterial({ color: 0x6fa8ff, emissive: 0x1f3f6b, emissiveIntensity: 0.5, roughness: 1 }));
+    earth.position.set(R, 0, 0); g.add(earth);
+    const pts: [string, number, number][] = [
+      ['L1', R - 1.4, 0], ['L2', R + 1.4, 0], ['L3', -R, 0],
+      ['L4', R * 0.5, R * 0.866], ['L5', R * 0.5, -R * 0.866],
+    ];
+    for (const [name, x, z] of pts) {
+      const m = new Mesh(new SphereGeometry(0.42, 16, 16), new MeshBasicMaterial({ color: 0x8affc0, blending: AdditiveBlending }));
+      m.position.set(x, 0, z); g.add(m);
+      const l = this.makeLabel(name, 'vec-label'); l.position.set(x, 0, z + 1.4); g.add(l);
+    }
+    const sl = this.makeLabel('Sun', 'vec-label'); sl.position.set(0, 0, -3); g.add(sl);
+    const el = this.makeLabel('Earth', 'vec-label'); el.position.set(R, 0, -2); g.add(el);
+    g.visible = false; this.scene.add(g);
+    this.lagGroup = g;
+  }
+
+  private buildTides(): void {
+    const g = new Group();
+    const eR = 2.4;
+    const eTex = surfaceTexture('earth', 0x3a6ea5);
+    this.tideEarth = new Mesh(new SphereGeometry(eR, 40, 40),
+      new MeshStandardMaterial({ map: eTex, emissiveMap: eTex, emissive: 0xffffff, emissiveIntensity: 0.5, roughness: 0.95 }));
+    g.add(this.tideEarth);
+    // Water envelope, stretched along the Earth–Moon axis (X) into two bulges.
+    this.tideBulge = new Mesh(new SphereGeometry(eR, 40, 40),
+      new MeshBasicMaterial({ color: 0x4ea6ff, transparent: true, opacity: 0.25, blending: AdditiveBlending }));
+    this.tideBulge.scale.set(1.42, 0.92, 0.92);
+    g.add(this.tideBulge);
+    const moon = new Mesh(new SphereGeometry(0.9, 24, 24), new MeshStandardMaterial({ map: surfaceTexture('moon', 0x888888), roughness: 1 }));
+    moon.position.set(13, 0, 0); g.add(moon);
+    const ml = this.makeLabel('Moon', 'vec-label'); ml.position.set(13, 0, 1.6); g.add(ml);
+    const a1 = new ArrowHelper(new Vector3(1, 0, 0), new Vector3(eR * 1.45, 0, 0), 2.2, 0x6ad6ff, 0.7, 0.4);
+    const a2 = new ArrowHelper(new Vector3(-1, 0, 0), new Vector3(-eR * 1.45, 0, 0), 2.2, 0x6ad6ff, 0.7, 0.4);
+    g.add(a1); g.add(a2);
+    g.visible = false; this.scene.add(g);
+    this.tideGroup = g;
+  }
+
+  private buildExoplanet(): void {
+    const g = new Group();
+    const bary = new Mesh(new SphereGeometry(0.16, 12, 12), new MeshBasicMaterial({ color: 0xff5a5a }));
+    g.add(bary);
+    const bl = this.makeLabel('Barycenter', 'vec-label'); bl.position.set(0, 0, -1.4); g.add(bl);
+    this.exoStar = new Mesh(new SphereGeometry(1.8, 32, 32), new MeshStandardMaterial({ color: 0xffd479, emissive: 0xd98a1e, emissiveIntensity: 0.9, roughness: 1 }));
+    g.add(this.exoStar);
+    this.exoPlanet = new Mesh(new SphereGeometry(0.7, 24, 24), new MeshStandardMaterial({ color: 0xc99a6a, emissive: 0x5a4327, emissiveIntensity: 0.4, roughness: 1 }));
+    g.add(this.exoPlanet);
+    const tg = new BufferGeometry();
+    tg.setAttribute('position', new Float32BufferAttribute(new Float32Array(this.maxTrail * 3), 3));
+    tg.setDrawRange(0, 0);
+    this.exoStarTrail = new Line(tg, new LineBasicMaterial({ color: 0xffd479, transparent: true, opacity: 0.8 }));
+    this.exoStarTrail.frustumCulled = false; g.add(this.exoStarTrail);
+    const sl = this.makeLabel('Star wobbles', 'vec-label'); sl.position.set(0, 0, 3.2); g.add(sl);
+    g.visible = false; this.scene.add(g);
+    this.exoGroup = g;
+  }
+
+  private buildResonance(): void {
+    const g = new Group();
+    const jupTex = surfaceTexture('jupiter', 0xd0a878);
+    const jup = new Mesh(new SphereGeometry(2.2, 32, 32),
+      new MeshStandardMaterial({ map: jupTex, emissiveMap: jupTex, emissive: 0xffffff, emissiveIntensity: 0.5, roughness: 1 }));
+    g.add(jup);
+    const radii = [5, 7.5, 10];
+    const names = ['Io', 'Europa', 'Ganymede'];
+    const colors = [0xe8e08a, 0xe6ddd0, 0xc9b89a];
+    this.resMoons = [];
+    for (let i = 0; i < 3; i++) {
+      g.add(this.circleLine(radii[i], 0x394056, 0.4));
+      const m = new Mesh(new SphereGeometry(0.5, 20, 20), new MeshStandardMaterial({ color: colors[i], emissive: 0x222018, emissiveIntensity: 0.3, roughness: 1 }));
+      m.userData.r = radii[i]; g.add(m); this.resMoons.push(m);
+      const l = this.makeLabel(names[i], 'moon-label'); m.userData.label = l; g.add(l);
+    }
+    g.visible = false; this.scene.add(g);
+    this.resGroup = g;
+  }
+
   /** Read a point along a built trajectory Line from its vertex buffer (t 0..1).
    *  Linearly interpolates between vertices so a marker moves smoothly each
    *  frame rather than snapping from one vertex to the next. */
@@ -1473,6 +1814,191 @@ export class World {
     this.precessTrailPts.length = 0;
     // Top-down on the Sun so the rosette reads face-on.
     this.flyTo(new Vector3(0, 30, 0.001), new Vector3(0, 0, 0));
+  }
+
+  // ---- extended demos: start (camera + reset), animated by updateExtras ----
+
+  /** Shared setup for the extended demos: set mode, hide dust/parallax/bodies. */
+  private beginExtra(mode: DemoMode): void {
+    this.state.demoMode = mode;
+    if (this.dust) this.dust.visible = false;
+    if (this.parallax) this.parallax.visible = false;
+    for (const v of this.views) {
+      if (!this.isVisible(v.body.id)) { v.opacity = 0; v.mesh.visible = false; }
+    }
+  }
+
+  startBlackHole(): void {
+    this.beginExtra('blackhole');
+    this.flyTo(new Vector3(0, 15, 30), new Vector3(0, -9, 0));
+  }
+  startGravWaves(): void {
+    this.beginExtra('gwaves');
+    this.gwPhase = 0; this.gwInspiral = 0;
+    this.flyTo(new Vector3(0, 30, 30), new Vector3(0, 0, 0));
+  }
+  startLensing(): void {
+    this.beginExtra('lensing');
+    this.lensPulseT = 0;
+    this.flyTo(new Vector3(-2, 34, 0.001), new Vector3(-2, 0, 0));
+  }
+  startTimeDilation(): void {
+    this.beginExtra('timedilation');
+    this.tdNear = 0; this.tdFar = 0;
+    this.flyTo(new Vector3(4, 18, 34), new Vector3(4, -6, 0));
+  }
+  startMilkyWay(): void {
+    this.beginExtra('milkyway');
+    this.mwAngle = 0;
+    this.flyTo(new Vector3(0, 40, 52), new Vector3(0, 0, 0));
+  }
+  startSgrA(): void {
+    this.beginExtra('sgra');
+    this.sgrM = 0; this.sgrTrailPts.length = 0;
+    this.flyTo(new Vector3(0, 34, 0.001), new Vector3(0, 0, 0));
+  }
+  startDarkMatter(): void {
+    this.beginExtra('darkmatter');
+    this.flyTo(new Vector3(0, 36, 0.001), new Vector3(0, 0, 0));
+  }
+  startLagrange(): void {
+    this.beginExtra('lagrange');
+    this.flyTo(new Vector3(0, 34, 0.001), new Vector3(0, 0, 0));
+  }
+  startTides(): void {
+    this.beginExtra('tides');
+    this.tideMoonAngle = 0; this.tideSpin = 0;
+    this.flyTo(new Vector3(2, 12, 22), new Vector3(2, 0, 0));
+  }
+  startExoplanet(): void {
+    this.beginExtra('exoplanet');
+    this.exoAngle = 0; this.exoStarTrailPts.length = 0;
+    this.flyTo(new Vector3(0, 30, 18), new Vector3(0, 0, 0));
+  }
+  startResonance(): void {
+    this.beginExtra('resonance');
+    this.resAngle = 0;
+    this.flyTo(new Vector3(0, 30, 0.001), new Vector3(0, 0, 0));
+  }
+
+  /** Toggle + animate every extended-demo overlay based on the current mode. */
+  private updateExtras(dtReal: number): void {
+    const mode = this.state.demoMode;
+    const paused = this.state.paused;
+    this.bhGroup.visible = mode === 'blackhole';
+    this.gwGroup.visible = mode === 'gwaves';
+    this.lensGroup.visible = mode === 'lensing';
+    this.tdGroup.visible = mode === 'timedilation';
+    this.mwGroup.visible = mode === 'milkyway';
+    this.sgrGroup.visible = mode === 'sgra';
+    this.dmGroup.visible = mode === 'darkmatter';
+    this.lagGroup.visible = mode === 'lagrange';
+    this.tideGroup.visible = mode === 'tides';
+    this.exoGroup.visible = mode === 'exoplanet';
+    this.resGroup.visible = mode === 'resonance';
+
+    // CSS2D labels are drawn by a separate renderer that doesn't inherit a
+    // parent Group's visibility, so toggle each group's labels explicitly.
+    const showLab = this.state.showLabels;
+    for (const g of [this.bhGroup, this.gwGroup, this.lensGroup, this.tdGroup, this.mwGroup,
+      this.sgrGroup, this.dmGroup, this.lagGroup, this.tideGroup, this.exoGroup, this.resGroup]) {
+      const on = g.visible && showLab;
+      g.traverse((o) => { if ((o as { isCSS2DObject?: boolean }).isCSS2DObject) o.visible = on; });
+    }
+
+    if (mode === 'blackhole') {
+      if (!paused) this.bhDisk.rotation.z += dtReal * 0.5;
+    } else if (mode === 'gwaves') {
+      if (!paused) {
+        this.gwInspiral += dtReal * 0.12; if (this.gwInspiral > 1) this.gwInspiral = 0;
+        const R = MathUtils.lerp(8, 1.6, this.gwInspiral);
+        this.gwPhase += dtReal * (1.0 + 6 * (1 - R / 8));
+      }
+      const R = MathUtils.lerp(8, 1.6, this.gwInspiral);
+      this.gwA.position.set(Math.cos(this.gwPhase) * R, 0, Math.sin(this.gwPhase) * R);
+      this.gwB.position.set(-Math.cos(this.gwPhase) * R, 0, -Math.sin(this.gwPhase) * R);
+      const maxR = 24;
+      for (let i = 0; i < this.gwRings.length; i++) {
+        const frac = ((this.gwPhase * 0.09 + i / this.gwRings.length) % 1 + 1) % 1;
+        const rr = 2 + frac * maxR;
+        this.gwRings[i].scale.setScalar(rr);
+        (this.gwRings[i].material as LineBasicMaterial).opacity = 0.5 * (1 - frac);
+      }
+    } else if (mode === 'lensing') {
+      if (!paused) { this.lensPulseT += dtReal * 0.22; if (this.lensPulseT > 1) this.lensPulseT = 0; }
+      const p = this.lensPulsePath;
+      if (p.length) {
+        const f = this.lensPulseT * (p.length - 1);
+        const i0 = Math.floor(f), i1 = Math.min(p.length - 1, i0 + 1), k = f - i0;
+        this.lensPulse.position.lerpVectors(p[i0], p[i1], k);
+      }
+    } else if (mode === 'timedilation') {
+      if (!paused) { this.tdFar += dtReal; this.tdNear += dtReal * 0.55; } // near the mass runs slow
+      this.tdNearHand.rotation.z = -this.tdNear * 1.6;
+      this.tdFarHand.rotation.z = -this.tdFar * 1.6;
+      (this.tdNearLabel.element as HTMLElement).textContent = `Near: ${this.tdNear.toFixed(1)} s`;
+      (this.tdFarLabel.element as HTMLElement).textContent = `Far: ${this.tdFar.toFixed(1)} s`;
+    } else if (mode === 'milkyway') {
+      if (!paused) this.mwAngle += dtReal * 0.05;
+      this.mwDisk.rotation.y = this.mwAngle;
+    } else if (mode === 'sgra') {
+      if (!paused) this.sgrM += dtReal * 0.9;
+      const a = this.sgrA, e = this.sgrE, b = a * Math.sqrt(1 - e * e);
+      let E = this.sgrM;
+      for (let i = 0; i < 6; i++) E -= (E - e * Math.sin(E) - this.sgrM) / (1 - e * Math.cos(E));
+      // Focus at the origin (BH): shift the ellipse by +c so a focus sits at 0.
+      const c = a * e;
+      this.sgrStar.position.set(a * Math.cos(E) - c, 0, b * Math.sin(E));
+      this.sgrLabel.position.copy(this.sgrStar.position).add(new Vector3(0, 0, 1.2));
+      if (!paused) {
+        this.sgrTrailPts.push(this.sgrStar.position.clone());
+        if (this.sgrTrailPts.length > this.maxTrail) this.sgrTrailPts.shift();
+        const arr = (this.sgrTrail.geometry.getAttribute('position') as Float32BufferAttribute).array as Float32Array;
+        for (let k = 0; k < this.sgrTrailPts.length; k++) { const p = this.sgrTrailPts[k]; arr[k * 3] = p.x; arr[k * 3 + 1] = p.y; arr[k * 3 + 2] = p.z; }
+        this.sgrTrail.geometry.setDrawRange(0, this.sgrTrailPts.length);
+        (this.sgrTrail.geometry.getAttribute('position') as Float32BufferAttribute).needsUpdate = true;
+      }
+    } else if (mode === 'darkmatter') {
+      const vObs = 4.2; // flat rotation speed (same at every radius)
+      for (const s of this.dmStars) {
+        if (!paused) s.angle += (vObs / s.r) * dtReal * 0.5;
+        const x = Math.cos(s.angle) * s.r, z = Math.sin(s.angle) * s.r;
+        s.mesh.position.set(x, 0, z);
+        const tang = new Vector3(-Math.sin(s.angle), 0, Math.cos(s.angle));
+        s.obs.position.set(x, 0, z); s.obs.setDirection(tang); s.obs.setLength(2.6, 0.8, 0.45);
+        const vKep = 9 / Math.sqrt(s.r); // expected Keplerian falloff (∝ 1/√r)
+        s.ghost.position.set(x, 0.05, z); s.ghost.setDirection(tang); s.ghost.setLength(vKep, 0.8, 0.45);
+      }
+    } else if (mode === 'tides') {
+      if (!paused) { this.tideSpin += dtReal * 0.8; }
+      this.tideEarth.rotation.y = this.tideSpin; // Earth spins inside the bulge
+      // Bulge stays aligned to the Moon (fixed at +X here).
+    } else if (mode === 'exoplanet') {
+      if (!paused) this.exoAngle += dtReal * 0.8;
+      const d = 9, mS = 1, mP = 0.12, rS = d * mP / (mS + mP), rP = d * mS / (mS + mP);
+      const a = this.exoAngle;
+      this.exoStar.position.set(Math.cos(a) * rS, 0, Math.sin(a) * rS);
+      this.exoPlanet.position.set(-Math.cos(a) * rP, 0, -Math.sin(a) * rP);
+      if (!paused) {
+        this.exoStarTrailPts.push(this.exoStar.position.clone());
+        if (this.exoStarTrailPts.length > this.maxTrail) this.exoStarTrailPts.shift();
+        const arr = (this.exoStarTrail.geometry.getAttribute('position') as Float32BufferAttribute).array as Float32Array;
+        for (let k = 0; k < this.exoStarTrailPts.length; k++) { const p = this.exoStarTrailPts[k]; arr[k * 3] = p.x; arr[k * 3 + 1] = p.y; arr[k * 3 + 2] = p.z; }
+        this.exoStarTrail.geometry.setDrawRange(0, this.exoStarTrailPts.length);
+        (this.exoStarTrail.geometry.getAttribute('position') as Float32BufferAttribute).needsUpdate = true;
+      }
+    } else if (mode === 'resonance') {
+      if (!paused) this.resAngle += dtReal * 0.7;
+      // Periods in 1:2:4 → angular speeds 4:2:1 (Io fastest).
+      const w = [4, 2, 1];
+      for (let i = 0; i < this.resMoons.length; i++) {
+        const m = this.resMoons[i];
+        const r = m.userData.r as number;
+        const a = this.resAngle * w[i];
+        m.position.set(Math.cos(a) * r, 0, Math.sin(a) * r);
+        (m.userData.label as CSS2DObject).position.copy(m.position).add(new Vector3(0, 0, 1.1));
+      }
+    }
   }
 
   private setArrowOpacity(a: ArrowHelper, o: number): void {
@@ -2018,6 +2544,7 @@ export class World {
     this.updateRocket();
     this.updateBoom(dtReal);
     this.updateAstro(dtReal);
+    this.updateExtras(dtReal);
 
     // Following a moving body (the body's curScene is set above this frame).
     if (this.followId) {

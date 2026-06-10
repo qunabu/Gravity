@@ -3,7 +3,7 @@
 An interactive, physically grounded model of the solar system that demonstrates
 how gravity shapes orbits — built with **TypeScript + Three.js + Vite**.
 
-It opens with a guided, 24-step walkthrough and then hands you a free-explore
+It opens with a guided, 35-step walkthrough and then hands you a free-explore
 mode. Everything is driven by real astronomical data; the only thing the
 renderer ever fakes is the *scale* (and that is a toggle you control).
 
@@ -31,7 +31,7 @@ npm run build    # type-check + production bundle into dist/
 
 ## The guided tour
 
-A narrated, 24-step walkthrough that builds up *why* orbits exist before showing
+A narrated, 35-step walkthrough that builds up *why* orbits exist before showing
 the whole system. Jump around with the **dropdown** or the dots, and every step
 has a **deep link** — paste `…/#why-no-fall` to land straight on that step. An
 **EN / PL** switch in the panel header toggles the narration between English and
