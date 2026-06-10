@@ -65,7 +65,7 @@ function fmtSpeed(dps: number): string {
 
 const V = (o: TourStep['vectors']) => o;
 
-export const STEPS: TourStep[] = [
+const STEPS_SOURCE: TourStep[] = [
   {
     id: 'what-is-gravity',
     title: 'What is gravity?',
@@ -414,6 +414,27 @@ export const STEPS: TourStep[] = [
     visible: [],
   },
 ];
+
+// Narrative order of the tour (step numbers derive from this). Foundations →
+// orbits → Moon & tides → 3-D & spin → the Sun's motion → the whole system →
+// structures within it → leaving it & other worlds → Einstein → cosmic scale.
+const TOUR_ORDER = [
+  'what-is-gravity', 'birth-of-sun', 'birth-of-earth',
+  'inertia', 'why-no-fall', 'too-slow', 'too-fast', 'rocket-too-slow', 'first-cosmic', 'second-cosmic',
+  'earth-moon', 'moon-no-fall', 'tides',
+  'into-3d', 'self-rotation',
+  'sun-moving', 'sun-moving-vectors', 'sun-moving-moons',
+  'solar-system', 'sphere-of-influence', 'lagrange', 'resonance', 'gravity-assist-1', 'gravity-assist-2',
+  'third-cosmic', 'exoplanet',
+  'spacetime', 'mercury-precession', 'lensing', 'time-dilation', 'black-hole', 'gravitational-waves',
+  'milky-way', 'sagittarius-a', 'dark-matter',
+];
+
+export const STEPS: TourStep[] = TOUR_ORDER.map((id) => {
+  const step = STEPS_SOURCE.find((s) => s.id === id);
+  if (!step) throw new Error(`TOUR_ORDER references unknown step id: ${id}`);
+  return step;
+});
 
 export type Lang = 'en' | 'pl';
 
