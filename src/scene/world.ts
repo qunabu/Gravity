@@ -281,6 +281,8 @@ export class World {
   private dioramaScene!: Scene; private dioramaCam!: PerspectiveCamera; private dioramaWater!: Mesh;
   private exoGroup!: Group;      private exoStar!: Mesh; private exoPlanet!: Mesh; private exoAngle = 0;
   private exoStarTrail!: Line;   private exoStarTrailPts: Vector3[] = [];
+  private exoObserver!: Mesh; private exoBeam!: Line; private exoHalo!: Mesh; private exoLink!: Line;
+  private exoSpecMarker!: Mesh; private exoStateLabel!: CSS2DObject;
   private resGroup!: Group;      private resMoons: Mesh[] = []; private resAngle = 0;
 
   // Explosion burst when a rocket crashes into the planet.
@@ -1548,11 +1550,21 @@ export class World {
 
   private buildExoplanet(): void {
     const g = new Group();
-    const bary = new Mesh(new SphereGeometry(0.16, 12, 12), new MeshBasicMaterial({ color: 0xff5a5a }));
+    // Faint line linking star and planet through the barycenter — they always
+    // sit on opposite sides of it.
+    this.exoLink = new Line(new BufferGeometry().setFromPoints([new Vector3(), new Vector3()]),
+      new LineBasicMaterial({ color: 0x556074, transparent: true, opacity: 0.5 }));
+    g.add(this.exoLink);
+    const bary = new Mesh(new SphereGeometry(0.22, 14, 14), new MeshBasicMaterial({ color: 0xff5a5a }));
     g.add(bary);
-    const bl = this.makeLabel('Barycenter', 'vec-label'); bl.position.set(0, 0, -1.4); g.add(bl);
+    const bl = this.makeLabel('Center of mass', 'vec-label'); bl.position.set(0, 0, -1.6); g.add(bl);
     this.exoStar = new Mesh(new SphereGeometry(1.8, 32, 32), new MeshStandardMaterial({ color: 0xffd479, emissive: 0xd98a1e, emissiveIntensity: 0.9, roughness: 1 }));
     g.add(this.exoStar);
+    // Doppler halo around the star — tinted blue when it approaches us, red when
+    // it recedes (this colour shift is what telescopes actually measure).
+    this.exoHalo = new Mesh(new SphereGeometry(2.25, 24, 24),
+      new MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.32, blending: AdditiveBlending, side: BackSide }));
+    this.exoStar.add(this.exoHalo);
     this.exoPlanet = new Mesh(new SphereGeometry(0.7, 24, 24), new MeshStandardMaterial({ color: 0xc99a6a, emissive: 0x5a4327, emissiveIntensity: 0.4, roughness: 1 }));
     g.add(this.exoPlanet);
     const tg = new BufferGeometry();
@@ -1560,7 +1572,32 @@ export class World {
     tg.setDrawRange(0, 0);
     this.exoStarTrail = new Line(tg, new LineBasicMaterial({ color: 0xffd479, transparent: true, opacity: 0.8 }));
     this.exoStarTrail.frustumCulled = false; g.add(this.exoStarTrail);
-    const sl = this.makeLabel('Star wobbles', 'vec-label'); sl.position.set(0, 0, 3.2); g.add(sl);
+    const sl = this.makeLabel('Star wobbles', 'vec-label'); sl.position.set(0, 2.6, 0); g.add(sl);
+
+    // The observer (us, on Earth) with a line of sight up to the star.
+    this.exoObserver = new Mesh(new SphereGeometry(0.5, 20, 20),
+      new MeshStandardMaterial({ map: surfaceTexture('earth', 0x3a6ea5), emissiveMap: surfaceTexture('earth', 0x3a6ea5), emissive: 0xffffff, emissiveIntensity: 0.5, roughness: 1 }));
+    this.exoObserver.position.set(0, 0, 13); g.add(this.exoObserver);
+    const ol = this.makeLabel('Us (Earth)', 'vec-label'); ol.position.set(0, 0, 14.4); g.add(ol);
+    this.exoBeam = new Line(new BufferGeometry().setFromPoints([new Vector3(), new Vector3()]),
+      new LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.7 }));
+    g.add(this.exoBeam);
+    this.exoStateLabel = this.makeLabel('', 'vec-label'); g.add(this.exoStateLabel);
+
+    // A spectrum strip near the observer: a rest wavelength (centre tick) and an
+    // observed line (marker) that slides blue (←) when approaching, red (→) when
+    // receding — the periodic wiggle that reveals the planet.
+    const specY = 0, specZ = 16, half = 5;
+    g.add(new Line(new BufferGeometry().setFromPoints([new Vector3(-half, specY, specZ), new Vector3(half, specY, specZ)]),
+      new LineBasicMaterial({ color: 0x8893a6 })));
+    g.add(new Line(new BufferGeometry().setFromPoints([new Vector3(0, specY, specZ - 0.5), new Vector3(0, specY, specZ + 0.5)]),
+      new LineBasicMaterial({ color: 0x8893a6, transparent: true, opacity: 0.6 })));
+    this.exoSpecMarker = new Mesh(new SphereGeometry(0.28, 14, 14), new MeshBasicMaterial({ color: 0xffffff }));
+    this.exoSpecMarker.position.set(0, specY, specZ); g.add(this.exoSpecMarker);
+    const sb = this.makeLabel('blue', 'vec-label'); sb.position.set(-half - 1, 0, specZ); g.add(sb);
+    const sr = this.makeLabel('red', 'vec-label'); sr.position.set(half + 1, 0, specZ); g.add(sr);
+    const st = this.makeLabel('starlight spectrum', 'vec-label'); st.position.set(0, 0, specZ + 1.4); g.add(st);
+
     g.visible = false; this.scene.add(g);
     this.exoGroup = g;
   }
@@ -1954,7 +1991,7 @@ export class World {
   startExoplanet(): void {
     this.beginExtra('exoplanet');
     this.exoAngle = 0; this.exoStarTrailPts.length = 0;
-    this.flyTo(new Vector3(0, 30, 18), new Vector3(0, 0, 0));
+    this.flyTo(new Vector3(0, 27, 30), new Vector3(0, 0, 7));
   }
   startResonance(): void {
     this.beginExtra('resonance');
@@ -2097,6 +2134,26 @@ export class World {
       const a = this.exoAngle;
       this.exoStar.position.set(Math.cos(a) * rS, 0, Math.sin(a) * rS);
       this.exoPlanet.position.set(-Math.cos(a) * rP, 0, -Math.sin(a) * rP);
+      // Doppler: the star's velocity is tangential; its component toward the
+      // observer (at +Z) is ∝ cos(a). Approaching → blue, receding → red.
+      const ap = Math.cos(a);
+      const c = new Color(0xffffff);
+      if (ap >= 0) c.lerp(new Color(0x5a9cff), ap); else c.lerp(new Color(0xff5a5a), -ap);
+      (this.exoHalo.material as MeshBasicMaterial).color.copy(c);
+      (this.exoBeam.material as LineBasicMaterial).color.copy(c);
+      (this.exoSpecMarker.material as MeshBasicMaterial).color.copy(c);
+      this.exoSpecMarker.position.x = -5 * ap;
+      // Star↔planet link through the centre of mass, and the line of sight.
+      const setSeg = (line: Line, ax: Vector3, bx: Vector3) => {
+        const arr = (line.geometry.getAttribute('position') as Float32BufferAttribute).array as Float32Array;
+        arr[0] = ax.x; arr[1] = ax.y; arr[2] = ax.z; arr[3] = bx.x; arr[4] = bx.y; arr[5] = bx.z;
+        (line.geometry.getAttribute('position') as Float32BufferAttribute).needsUpdate = true;
+      };
+      setSeg(this.exoLink, this.exoStar.position, this.exoPlanet.position);
+      setSeg(this.exoBeam, this.exoStar.position, this.exoObserver.position);
+      this.exoStateLabel.position.set(5.5, 0, 8);
+      (this.exoStateLabel.element as HTMLElement).textContent =
+        ap > 0.15 ? 'Approaching → blueshift' : ap < -0.15 ? 'Receding → redshift' : 'Sideways → no shift';
       if (!paused) {
         this.exoStarTrailPts.push(this.exoStar.position.clone());
         if (this.exoStarTrailPts.length > this.maxTrail) this.exoStarTrailPts.shift();
