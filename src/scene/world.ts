@@ -258,6 +258,7 @@ export class World {
   // Each demo's objects live in a Group, built once (hidden) and toggled +
   // animated by updateExtras() based on the current demoMode.
   private bhGroup!: Group;       private bhDisk!: Mesh;          // black hole + accretion disk
+  private bhBody!: Mesh; private bhInfallT = 0; private bhHorizonY = 0; private readonly bhHorizonR = 2.2;
   private gwGroup!: Group;       private gwA!: Mesh; private gwB!: Mesh; private gwRings: Line[] = [];
   private gwPhase = 0;           private gwInspiral = 0;
   private lensGroup!: Group;     private lensPulse!: Mesh; private lensPulsePath: Vector3[] = [];
@@ -1251,28 +1252,37 @@ export class World {
 
   private buildBlackHole(): void {
     const depth = 13;
-    const g = this.warpGrid(depth, 3.2, 0x7a5cff, 0.4);
+    const g = this.warpGrid(depth, 3.2, 0x7a5cff, 0.28);
     const yc = -depth; // well(0)
-    // Event horizon: a pure-black sphere.
-    const horizon = new Mesh(new SphereGeometry(2.2, 32, 32), new MeshBasicMaterial({ color: 0x000000 }));
-    horizon.position.set(0, yc + 2.4, 0);
-    g.add(horizon);
-    // Accretion disk: a glowing ring lying around the horizon, tilted.
-    this.bhDisk = new Mesh(
-      new RingGeometry(2.7, 7.5, 80, 1),
-      new MeshBasicMaterial({ color: 0xff8a3c, side: DoubleSide, transparent: true, opacity: 0.8, blending: AdditiveBlending }),
-    );
-    this.bhDisk.rotation.x = -Math.PI / 2 + 0.32; // lay flat, slight tilt
-    this.bhDisk.position.copy(horizon.position);
-    g.add(this.bhDisk);
-    // Photon ring: a thin bright halo hugging the horizon.
-    const photon = new Mesh(
-      new TorusGeometry(2.45, 0.07, 12, 64),
-      new MeshBasicMaterial({ color: 0xfff1d0, transparent: true, opacity: 0.9, blending: AdditiveBlending }),
-    );
-    photon.rotation.x = -Math.PI / 2 + 0.32;
-    photon.position.copy(horizon.position);
-    g.add(photon);
+    const hpos = new Vector3(0, yc + 2.4, 0);
+    this.bhHorizonY = hpos.y;
+    const tilt = -Math.PI / 2 + 0.34;
+    // Event horizon: a pure-black sphere (the point of no return).
+    const horizon = new Mesh(new SphereGeometry(this.bhHorizonR, 40, 40), new MeshBasicMaterial({ color: 0x000000 }));
+    horizon.position.copy(hpos); g.add(horizon);
+    // Accretion disk — layered glowing gas: a hot white-orange inner band and a
+    // cooler orange outer band, lying around the horizon and tilted.
+    this.bhDisk = new Mesh(new RingGeometry(2.7, 4.6, 90, 1),
+      new MeshBasicMaterial({ color: 0xffd79a, side: DoubleSide, transparent: true, opacity: 0.85, blending: AdditiveBlending }));
+    this.bhDisk.rotation.x = tilt; this.bhDisk.position.copy(hpos); g.add(this.bhDisk);
+    const outer = new Mesh(new RingGeometry(4.6, 8.2, 90, 1),
+      new MeshBasicMaterial({ color: 0xff7a2c, side: DoubleSide, transparent: true, opacity: 0.6, blending: AdditiveBlending }));
+    this.bhDisk.add(outer); // child → inherits the disk's tilt/position and spin
+    // Lensed "photon rings": one in the disk plane and one standing vertical, so
+    // light bent around the hole arcs over the top — the Interstellar/EHT look.
+    const ringMat = () => new MeshBasicMaterial({ color: 0xfff1d0, transparent: true, opacity: 0.9, blending: AdditiveBlending });
+    const ph1 = new Mesh(new TorusGeometry(2.5, 0.07, 12, 80), ringMat()); ph1.rotation.x = tilt; ph1.position.copy(hpos); g.add(ph1);
+    const ph2 = new Mesh(new TorusGeometry(2.55, 0.06, 12, 80), ringMat()); ph2.position.copy(hpos); g.add(ph2); // vertical (faces camera)
+    // An infalling body that spirals in, gets stretched into "spaghetti", and is
+    // swallowed — nothing escapes the horizon.
+    this.bhBody = new Mesh(new SphereGeometry(0.42, 18, 18),
+      new MeshBasicMaterial({ color: 0x9fc6ff }));
+    this.bhBody.position.copy(hpos); g.add(this.bhBody);
+    // Labels.
+    const lab = (t: string, x: number, y: number, z: number) => { const l = this.makeLabel(t, 'vec-label'); l.position.set(x, y, z); g.add(l); return l; };
+    lab('Event horizon', 0, hpos.y - 3.2, 0);
+    lab('Inside: unknown — our physics breaks down', 0, hpos.y + 4.4, 0);
+    lab('Nothing escapes — not even light', 0, hpos.y + 6.0, 0);
     g.visible = false; this.scene.add(g);
     this.bhGroup = g;
   }
@@ -1298,9 +1308,14 @@ export class World {
     // Schematic in the X–Z plane (viewed top-down): Sun at origin, observer at
     // +X, the true star far at -X (directly behind the Sun); light grazing the
     // Sun bends, so the star *appears* offset (+Z).
-    const sun = new Mesh(new SphereGeometry(2.0, 32, 32),
-      new MeshStandardMaterial({ color: 0xffb056, emissive: 0xff7b22, emissiveIntensity: 0.9, roughness: 1 }));
+    const sunTex = surfaceTexture('sun', 0xffb056);
+    const sun = new Mesh(new SphereGeometry(2.4, 40, 40),
+      new MeshStandardMaterial({ map: sunTex, emissiveMap: sunTex, emissive: 0xffffff, emissiveIntensity: 1.0, roughness: 1 }));
     g.add(sun);
+    // Soft glow halo so it reads like the Sun in the other slides.
+    const glow = new Mesh(new SphereGeometry(3.4, 32, 32),
+      new MeshBasicMaterial({ color: 0xffb056, transparent: true, opacity: 0.18, blending: AdditiveBlending, side: BackSide }));
+    g.add(glow);
     g.add(this.makeStar(-22, 0, 0xffffff));            // true star (on axis)
     g.add(this.makeStar(-22, 7.5, 0x9fc6ff));          // apparent star (offset)
     const observer = new Mesh(new SphereGeometry(0.7, 20, 20), new MeshStandardMaterial({ color: 0x6fa8ff, emissive: 0x1f3f6b, emissiveIntensity: 0.6 }));
@@ -1948,7 +1963,8 @@ export class World {
 
   startBlackHole(): void {
     this.beginExtra('blackhole');
-    this.flyTo(new Vector3(0, 15, 30), new Vector3(0, -9, 0));
+    this.bhInfallT = 0;
+    this.flyTo(new Vector3(0, 9, 27), new Vector3(0, -10, 0));
   }
   startGravWaves(): void {
     this.beginExtra('gwaves');
@@ -2026,7 +2042,22 @@ export class World {
     }
 
     if (mode === 'blackhole') {
-      if (!paused) this.bhDisk.rotation.z += dtReal * 0.5;
+      if (!paused) { this.bhDisk.rotation.z += dtReal * 0.5; this.bhInfallT += dtReal * 0.16; if (this.bhInfallT > 1) this.bhInfallT = 0; }
+      // Infalling body: spirals in (radius shrinks), heats up (blue→white), and
+      // stretches radially into "spaghetti" as tidal forces grow near the horizon.
+      const t = this.bhInfallT;
+      const ease = t * t; // accelerates inward
+      const r = MathUtils.lerp(9, this.bhHorizonR, ease);
+      const ang = t * Math.PI * 7;
+      const cx = Math.cos(ang) * r, cz = Math.sin(ang) * r;
+      this.bhBody.position.set(cx, this.bhHorizonY, cz);
+      const center = new Vector3(0, this.bhHorizonY, 0);
+      this.bhBody.lookAt(center); // local +Z points at the hole
+      const stretch = 1 + Math.pow(t, 3) * 22; // dramatic near the end
+      this.bhBody.scale.set(Math.max(0.25, 1 - t * 0.7), Math.max(0.25, 1 - t * 0.7), stretch);
+      const m = this.bhBody.material as MeshBasicMaterial;
+      m.color.copy(new Color(0x9fc6ff)).lerp(new Color(0xffffff), t); // heats up
+      m.transparent = true; m.opacity = t > 0.92 ? (1 - t) / 0.08 : 1; // vanish at the horizon
     } else if (mode === 'gwaves') {
       if (!paused) {
         this.gwInspiral += dtReal * 0.12; if (this.gwInspiral > 1) this.gwInspiral = 0;
