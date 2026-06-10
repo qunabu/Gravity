@@ -419,8 +419,8 @@ export const PL: Record<string, { title: string; body: string }> = {
 };
 
 const UI = {
-  en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step' },
-  pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok' },
+  en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step', playCta: 'Play with narration & music' },
+  pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok', playCta: 'Odtwórz z narracją i muzyką' },
 };
 
 export function stepIndexFromHash(): number {
@@ -453,6 +453,7 @@ export class Tour {
   private autoSlideStart = 0;       // when the current slide's narration began (ms)
   private autoEnd = 0;              // estimated time it will advance (ms)
   private autoRaf = 0;
+  private cta!: HTMLButtonElement;  // first-slide "play everything" call-to-action
 
   constructor(private world: World, private onExit: () => void) {
     // Single right-side tour panel: header, step dropdown, narration, speed, nav.
@@ -485,6 +486,17 @@ export class Tour {
         <button class="tour-next">Next ›</button>
       </div>`;
     document.getElementById('app')!.appendChild(this.root);
+
+    // First-slide call-to-action: one tap starts the music + narrated auto-play.
+    this.cta = document.createElement('button');
+    this.cta.type = 'button';
+    this.cta.className = 'tour-cta';
+    this.cta.style.display = 'none';
+    this.cta.innerHTML = `
+      <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+      <span class="tour-cta-label">${UI[this.lang].playCta}</span>`;
+    this.cta.addEventListener('click', () => this.startPlayback());
+    document.getElementById('app')!.appendChild(this.cta);
 
     this.titleEl = this.root.querySelector('.tour-title')!;
     this.bodyEl = this.root.querySelector('.tour-body')!;
@@ -618,6 +630,7 @@ export class Tour {
   private exit(): void {
     this.active = false;
     if (this.autoPlay) this.setAutoPlay(false);
+    this.updateCta();
     document.body.classList.remove('tour-active');
     this.world.setVisibleBodies(null);
     this.clearTeaching();
@@ -628,6 +641,7 @@ export class Tour {
   private showExplore(): void {
     this.active = false;
     if (this.autoPlay) this.setAutoPlay(false);
+    this.updateCta();
     document.body.classList.remove('tour-active');
     this.world.setVisibleBodies(null);
     this.clearTeaching();
@@ -665,9 +679,24 @@ export class Tour {
     }
     if (updateHash) location.hash = step.id;
     if (this.autoPlay) this.playCurrent(); // narrate this slide, then auto-advance
+    this.updateCta();
   }
 
   // ---- narrated auto-play -------------------------------------------------
+
+  /** First-slide CTA: turn the music on and start the narrated auto-play. */
+  private startPlayback(): void {
+    // Music lives in its own controller (music.ts) behind the corner toggle —
+    // flip it on by clicking that button, but only if it isn't already on.
+    const music = document.getElementById('music-toggle');
+    if (music && music.getAttribute('aria-pressed') !== 'true') music.click();
+    if (!this.autoPlay) this.setAutoPlay(true);
+  }
+
+  /** The CTA shows only on the first slide before auto-play has started. */
+  private updateCta(): void {
+    this.cta.style.display = this.active && this.index === 0 && !this.autoPlay ? 'inline-flex' : 'none';
+  }
 
   private setAutoPlay(on: boolean): void {
     this.autoPlay = on;
@@ -676,6 +705,7 @@ export class Tour {
     this.progressTrack.classList.toggle('on', on);
     if (on) { this.playCurrent(); this.autoRaf = requestAnimationFrame(this.autoTick); }
     else { this.stopAuto(); cancelAnimationFrame(this.autoRaf); this.progressFill.style.width = '0%'; }
+    this.updateCta();
   }
 
   private stopAuto(): void {
@@ -804,6 +834,8 @@ export class Tour {
     this.root.querySelectorAll('.step-item .step-title').forEach((el, k) => {
       el.textContent = this.localized(STEPS[k]).title;
     });
+    const ctaLabel = this.cta?.querySelector('.tour-cta-label');
+    if (ctaLabel) ctaLabel.textContent = ui.playCta;
   }
 
   get isActive(): boolean { return this.active; }

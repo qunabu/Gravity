@@ -42,6 +42,22 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 }
 .music-toggle:hover { color: var(--text); border-color: var(--line-strong); }
 .music-toggle.on { color: #05070d; background: var(--accent); border-color: var(--accent); }
+
+/* First-slide call-to-action: one tap starts music + narrated auto-play. */
+.tour-cta {
+  position: fixed; left: 50%; bottom: 13%; transform: translateX(-50%); z-index: 40;
+  align-items: center; gap: 10px; padding: 15px 28px; border-radius: 999px;
+  background: #fff; color: #05070d; border: none;
+  font-family: var(--sans); font-size: 14px; font-weight: 600; letter-spacing: 0.04em;
+  cursor: pointer; box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 10px 34px rgba(0, 0, 0, 0.55);
+  animation: cta-pulse 2.6s ease-in-out infinite;
+}
+.tour-cta:hover { background: #e9eef7; }
+.tour-cta svg { display: block; margin-left: -2px; }
+@keyframes cta-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 10px 34px rgba(0, 0, 0, 0.55); }
+  50%      { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0.07), 0 10px 34px rgba(0, 0, 0, 0.55); }
+}
 .credit a { color: rgba(255, 255, 255, 0.55); text-decoration: none; }
 .credit a:hover { color: var(--text); }
 .label-layer { position: fixed; inset: 0; pointer-events: none; }
@@ -365,4 +381,7 @@ body.tour-active .tour-panel { display: flex; }
 
   /* Move the music toggle up by the credits, clear of the bottom sheet. */
   .music-toggle { bottom: auto; top: 4px; left: auto; right: 12px; }
+
+  /* Keep the CTA in the upper area, clear of the bottom-sheet panel. */
+  .tour-cta { bottom: auto; top: 34%; }
 }
