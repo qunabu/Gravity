@@ -276,7 +276,9 @@ export class World {
   private tideCity!: Mesh; private tideColumn!: Line; private tideCityLabel!: CSS2DObject;
   private tideMoon!: Mesh; private tideMoonLabel!: CSS2DObject; private tideAxis!: Line;
   private tideRegionLabels: CSS2DObject[] = []; // [high, high, low, low]
-  private tideScene2D!: HTMLElement; private tideWater2D!: SVGRectElement; private tideLabel2D!: Element;
+  // Side-view coastline diorama, rendered as a 3-D inset (its own scene/camera).
+  private tidePanel!: HTMLElement; private tideLabel2D!: Element;
+  private dioramaScene!: Scene; private dioramaCam!: PerspectiveCamera; private dioramaWater!: Mesh;
   private exoGroup!: Group;      private exoStar!: Mesh; private exoPlanet!: Mesh; private exoAngle = 0;
   private exoStarTrail!: Line;   private exoStarTrailPts: Vector3[] = [];
   private resGroup!: Group;      private resMoons: Mesh[] = []; private resAngle = 0;
@@ -1502,34 +1504,46 @@ export class World {
     g.add(this.tideColumn);
     this.tideCityLabel = this.makeLabel('', 'vec-label'); g.add(this.tideCityLabel);
 
-    // A simple side-view "coastline" panel: the sea level rises up the beach
-    // toward the tree at high tide and recedes at low tide. The water level is
-    // driven each frame from the same Moon-alignment as the 3-D model.
+    // Framing + caption for the 3-D coastline inset (the diorama itself is
+    // drawn straight onto the canvas in render(), behind this transparent div).
     const el = document.createElement('div');
-    el.className = 'tide2d';
+    el.className = 'tide-panel';
     el.style.display = 'none';
-    el.innerHTML = `
-      <svg viewBox="0 0 220 150" preserveAspectRatio="xMidYMid meet">
-        <rect x="0" y="0" width="220" height="150" fill="#070b12"/>
-        <circle cx="196" cy="22" r="9" fill="#e9eccb"/>
-        <text x="178" y="40" fill="rgba(233,236,203,0.7)" font-size="7" font-family="sans-serif">Moon</text>
-        <path d="M0,150 L0,120 L110,120 L200,74 L220,74 L220,150 Z" fill="#4a3f29"/>
-        <rect x="183" y="58" width="5" height="24" fill="#6b4a2b"/>
-        <circle cx="185.5" cy="53" r="11" fill="#3f7d4a"/>
-        <line x1="0" y1="70" x2="220" y2="70" stroke="rgba(255,255,255,0.25)" stroke-width="0.6" stroke-dasharray="3 3"/>
-        <line x1="0" y1="116" x2="220" y2="116" stroke="rgba(255,255,255,0.25)" stroke-width="0.6" stroke-dasharray="3 3"/>
-        <text x="4" y="67" fill="rgba(255,255,255,0.45)" font-size="6.5" font-family="sans-serif">HIGH</text>
-        <text x="4" y="113" fill="rgba(255,255,255,0.45)" font-size="6.5" font-family="sans-serif">LOW</text>
-        <rect class="tide2d-water" x="0" y="116" width="220" height="34" fill="#3f86c4" fill-opacity="0.55"/>
-        <text class="tide2d-label" x="10" y="16" fill="#eaf0ff" font-size="9" font-weight="600" font-family="sans-serif">Low tide</text>
-      </svg>`;
+    el.innerHTML = `<span class="tide-panel-title">Tide level</span><span class="tide2d-label">Low tide</span>`;
     document.body.appendChild(el);
-    this.tideScene2D = el;
-    this.tideWater2D = el.querySelector('.tide2d-water') as SVGRectElement;
+    this.tidePanel = el;
     this.tideLabel2D = el.querySelector('.tide2d-label')!;
+    this.buildTideDiorama();
 
     g.visible = false; this.scene.add(g);
     this.tideGroup = g;
+  }
+
+  /** A little 3-D side-view coastline (own scene + camera) for the inset: a
+   *  sloped beach, a tree, the Moon, and a sea whose level rises/falls. Flat
+   *  MeshBasic colours so it needs no scene lighting. */
+  private buildTideDiorama(): void {
+    const s = new Scene();
+    s.background = new Color(0x070b12);
+    this.dioramaCam = new PerspectiveCamera(42, 1.46, 0.1, 100);
+    this.dioramaCam.position.set(-1, 4.5, 16);
+    this.dioramaCam.lookAt(2, 1.5, 0);
+    // Beach: a box tilted so its top is a slope rising left (sea) → right (land).
+    const beach = new Mesh(new BoxGeometry(24, 9, 9), new MeshBasicMaterial({ color: 0x6b5836 }));
+    beach.rotation.z = -0.22; beach.position.set(5, -2.6, 0); s.add(beach);
+    // Tree on the upper beach.
+    const trunk = new Mesh(new CylinderGeometry(0.28, 0.36, 3, 10), new MeshBasicMaterial({ color: 0x6b4a2b }));
+    trunk.position.set(8.5, 3.4, 0.5); s.add(trunk);
+    const canopy = new Mesh(new ConeGeometry(1.7, 3.4, 14), new MeshBasicMaterial({ color: 0x3f7d4a }));
+    canopy.position.set(8.5, 5.7, 0.5); s.add(canopy);
+    // Moon in the sky.
+    const moon = new Mesh(new SphereGeometry(1.1, 20, 20), new MeshBasicMaterial({ color: 0xe9eccb }));
+    moon.position.set(-7, 8, -3); s.add(moon);
+    // Sea: a big box so it always fills the left/bottom; its top is the water
+    // surface, raised/lowered each frame so the waterline climbs the beach.
+    this.dioramaWater = new Mesh(new BoxGeometry(40, 20, 16), new MeshBasicMaterial({ color: 0x2f6fa6 }));
+    this.dioramaWater.position.set(-9, -10, 0.5); s.add(this.dioramaWater); // y set in updateExtras
+    this.dioramaScene = s;
   }
 
   private buildExoplanet(): void {
@@ -1963,7 +1977,7 @@ export class World {
     this.tideGroup.visible = mode === 'tides';
     this.exoGroup.visible = mode === 'exoplanet';
     this.resGroup.visible = mode === 'resonance';
-    this.tideScene2D.style.display = mode === 'tides' ? 'block' : 'none';
+    this.tidePanel.style.display = mode === 'tides' ? 'block' : 'none';
 
     // CSS2D labels are drawn by a separate renderer that doesn't inherit a
     // parent Group's visibility, so toggle each group's labels explicitly.
@@ -2072,12 +2086,10 @@ export class World {
       this.tideCityLabel.position.copy(top).add(cityDir.clone().multiplyScalar(1.0));
       const isHigh = Math.abs(cosA) > 0.5;
       (this.tideCityLabel.element as HTMLElement).textContent = isHigh ? 'High tide' : 'Low tide';
-      // Side-view panel: raise/lower the sea between the LOW (y=116) and HIGH
-      // (y=70) marks, tracking the city's tide level (|cosA|).
+      // Diorama inset: raise/lower the sea (box top) with the tide level. The
+      // box half-height is 10, so top = position.y + 10; map level → top ∈ [0,3].
       const lvl = Math.abs(cosA);
-      const y = 116 - (116 - 70) * lvl;
-      this.tideWater2D.setAttribute('y', y.toFixed(1));
-      this.tideWater2D.setAttribute('height', (150 - y).toFixed(1));
+      this.dioramaWater.position.y = -10 + (0 + lvl * 3);
       this.tideLabel2D.textContent = isHigh ? 'High tide' : 'Low tide';
     } else if (mode === 'exoplanet') {
       if (!paused) this.exoAngle += dtReal * 0.8;
@@ -2692,6 +2704,26 @@ export class World {
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
     this.labelRenderer.render(this.scene, this.camera);
+
+    // 3-D coastline inset (tides slide): render the diorama scene into a corner
+    // viewport, on top of the main render.
+    if (this.state.demoMode === 'tides') this.renderTideInset();
+  }
+
+  private renderTideInset(): void {
+    const r = this.renderer;
+    const mobile = window.innerWidth <= 760;
+    const w = mobile ? 180 : 240, h = mobile ? 124 : 164;
+    const x = mobile ? 10 : 14;
+    const y = mobile ? window.innerHeight - 40 - h : 64; // viewport origin is bottom-left
+    this.dioramaCam.aspect = w / h;
+    this.dioramaCam.updateProjectionMatrix();
+    r.setScissorTest(true);
+    r.setViewport(x, y, w, h);
+    r.setScissor(x, y, w, h);
+    r.render(this.dioramaScene, this.dioramaCam); // autoClear fills the rect with the diorama bg
+    r.setScissorTest(false);
+    r.setViewport(0, 0, window.innerWidth, window.innerHeight);
   }
 
   /**
