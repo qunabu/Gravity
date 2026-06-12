@@ -316,7 +316,7 @@ export const STEPS: TourStep[] = [
   },
 ];
 
-export type Lang = 'en' | 'pl';
+export type Lang = 'en' | 'pl' | 'zh';
 
 // Polish translations, keyed by step id. UI chrome strings below.
 export const PL: Record<string, { title: string; body: string }> = {
@@ -418,8 +418,109 @@ export const PL: Record<string, { title: string; body: string }> = {
   },
 };
 
+// Chinese translations, keyed by step id.
+export const ZH: Record<string, { title: string; body: string }> = {
+  'what-is-gravity': {
+    title: '什么是引力？',
+    body: '引力是任意两个质量之间的吸引力：F = G · m₁·m₂ / r² — 质量越大越强，距离的平方越大越弱。这里只有两个天体。箭头显示彼此施加的拉力：大小相等、方向相反（牛顿第三定律），约 3.5 × 10²² 牛顿。太阳约是地球的 333,000 倍重，因此同样的力几乎无法撼动太阳，却足以让地球飞驰。这一条规则就是全部的故事——接下来我们会看到，正是它构建了这些天体。',
+  },
+  'birth-of-sun': {
+    title: '引力构建了太阳',
+    body: '约 46 亿年前，还没有行星——只有一片巨大、寒冷的气体尘埃云（太阳星云）。每一粒尘埃都吸引着其他每一粒。引力将星云向内拉拽，随着坍缩，它旋转成一个扁平的圆盘，中心是一个致密且不断增长的核心。当核心变得足够热、足够重，引燃核聚变时，太阳就被点亮了。看尘埃如何汇聚在一起。',
+  },
+  'birth-of-earth': {
+    title: '引力构建了地球',
+    body: '同样的事情在年轻的太阳周围以缩小的规模上演。在残留的圆盘中，尘埃颗粒互相粘合，它们不断增长的引力又席卷了更多物质——这个雪崩式的过程叫做吸积。卵石变成巨石，巨石变成星子，星子合并成行星。地球就是这样一颗由岩石和金属积聚而成的球体。点燃太阳的那股力量，也组装了你脚下的土地。',
+  },
+  'inertia': {
+    title: '运动的物体保持运动',
+    body: '现在把太阳完全移除。在没有外力作用的情况下，地球遵循牛顿第一定律：它以恒定的 29.8 km/s 永远沿着一条完美的直线漂移（绿色箭头 = 它的速度）。这就是惯性。单凭运动，只能走直线——永远不会是曲线，永远不会是圆。必须有某种东西来弯曲路径。在进入下一步之前，请记住这颗漂移的地球。',
+  },
+  'why-no-fall': {
+    title: '为什么地球不会掉进太阳',
+    body: '把它们结合起来。太阳的引力（红色箭头）始终把地球直直拉向自己——那为什么没有碰撞？因为地球同时在以 29.8 km/s 横向运动（绿色箭头）。每一刻它确实在向太阳坠落，但横向速度带着它飞过——它不断"错过"。虚线显示了仅靠惯性它会飞向哪里；引力将那直线路径弯成一个闭合的圈。轨道就是持续地坠落，并且永远地错过。',
+  },
+  'too-slow': {
+    title: '太慢——它会坠落',
+    body: '轨道是一种平衡，速度维持着天体。给地球太少的横向速度，引力就会取胜：路径弯曲得太厉害，它不是绕圈，而是扎向太阳。一颗运动太慢的行星不会绕轨——它会坠落。',
+  },
+  'too-fast': {
+    title: '太快——它会逃离',
+    body: '现在反过来。把地球推到"逃逸速度"以上，引力就再也抓不住它了：路径仍然弯曲，但永远不会闭合。地球绕太阳飞过一次后就飞向太空，永不返回。太慢和太快之间，是产生稳定轨道的狭窄速度范围。',
+  },
+  'rocket-too-slow': {
+    title: '低于轨道速度——它会掉回来',
+    body: '火箭要多快才能离开地球？横向发射得太慢，它只是划一道弧线就掉回来：引力在它完成一圈之前就把它拉回地面。无论方向如何，速度不够总是同样的结局——坠落。',
+  },
+  'first-cosmic': {
+    title: '第一宇宙速度——入轨',
+    body: '给它刚好足够的横向速度——第一宇宙速度，≈ 7.9 km/s——它就不再掉回来了。现在火箭围绕着地球坠落，而不是掉到地球上，进入圆形轨道。这就是近地轨道上每一颗卫星的速度。',
+  },
+  'second-cosmic': {
+    title: '第二宇宙速度——逃逸',
+    body: '推到第二宇宙速度，≈ 11.2 km/s（恰好是第一宇宙速度的 √2 倍），火箭便不再绕轨——它彻底挣脱地球的引力，飞向远方。这就是前往月球或其他星球所需的逃逸速度。',
+  },
+  'earth-moon': {
+    title: '地球和月球',
+    body: '同样的规则嵌套在每个尺度上。月球（地球质量的 1.2%）被地球引力牵引，每 27.3 天在 384,400 公里外绕行——一个轨道中的轨道。它还被潮汐锁定了：每绕行一圈恰好自转一次，因此同一面始终朝向地球，我们从这里永远看不到背面——尽管那个背面虽然被叫做"暗面"，受光照的时间其实和正面一样。稍后在面板中切换到"N 体"物理，可以看到月球回拉地球，两者围绕共同的质心摆动。',
+  },
+  'moon-no-fall': {
+    title: '为什么月球不掉到地球上',
+    body: '这和地球与太阳的平衡完全相同，只是向下移了一层。地球的引力（红色箭头）把月球直直拉向我们——约 2 × 10²⁰ N——但它从未坠落。月球同时在以 1.02 km/s 横向运动（绿色箭头）：每一刻它都在向地球坠落，但速度带着它飞过，所以它绕圈而非着陆。虚线显示了没有引力时它会径直飞向何处。它已经围绕我们坠落——并不断错过——长达 45 亿年。',
+  },
+  'into-3d': {
+    title: '进入第三维',
+    body: '轨道并非完全平坦。月球的轨道相对地球轨道倾斜 5.1°，每颗行星的轨道都相对于黄道面倾斜。旋转到 3D 视角来看这些倾角——拖拽可旋转摄像机。在面板中切换"投影"，将每个天体投影到二维平面上，看看 3D 位置如何向下投影。',
+  },
+  'self-rotation': {
+    title: '绕自身轴旋转',
+    body: '绕太阳公转只是运动的一半——每个天体还围绕自身轴自转，独立于轨道。地球每 23 小时 56 分钟自转一次（一个恒星日），自转轴倾斜 23.4°（蓝色线）。自转带来昼夜；倾斜带来四季。自转速率差异极大：木星不到 10 小时转一圈，而金星需要 243 天——而且是倒着转。看地球旋转。',
+  },
+  'sun-moving': {
+    title: '太阳也在动——轨道其实是螺旋线',
+    body: '我们把每个轨道都画成了扁平、闭合的圈——但那只是相对于太阳。太阳本身并非静止：它以约 230 km/s 的速度在银河系中飞奔，带着整个太阳系一起前进。因此一颗行星在空间中的真实路径永远不会闭合。它在围绕太阳旋转的同时被拖着向前，描绘出一条长长的三维螺旋线。每条彩色轨迹都是一颗行星的真实空间路线；太阳的轨迹是它们缠绕的那条直线。',
+  },
+  'sun-moving-vectors': {
+    title: '同样的力，依然在起作用',
+    body: '即使在完全三维的运动中，物理规律也没有改变。每颗行星仍然感受到引力（红色）直直拉向太阳，仍然具有速度（绿色）——只是那个速度现在沿螺旋线运动，而非绕一个扁平的圆。引力在每一个瞬间弯曲路径；向前漂移将每个圈拉伸成螺旋。相同的 F = G·m₁·m₂/r²，相同的坠落-与-错过——只是从太阳的运动参考系中看到的样子。',
+  },
+  'sun-moving-moons': {
+    title: '卫星也跟着飞',
+    body: '嵌套一直延伸到最底层。当太阳拉着地球沿其螺旋运动时，地球也拉着月球——所以月球的轨迹是缠绕在地球螺旋上的一条螺旋，而地球的螺旋又缠绕在太阳的路径上。每个天体都同时在绕轨、被携带、以及携带自己的卫星。空间中的真实运动是螺旋中的螺旋。',
+  },
+  'solar-system': {
+    title: '整个太阳系',
+    body: '接下来是剩下的：八颗行星（外加冥王星）和它们的主要卫星，全部在真实的 J2000 轨道上，具有准确的尺寸和距离，每颗都在绕自身轴旋转。用面板在"视觉比例"和"真实比例"（行星变成它们真实大小的微粒）之间切换，开启 N 体引力，改变速度，聚焦任意天体。自由探索。',
+  },
+  'third-cosmic': {
+    title: '第三宇宙速度——离开太阳系',
+    body: '再向外迈出最后一步。即使逃离了地球，探测器仍然被太阳束缚着。第三宇宙速度，从地球出发约 16.7 km/s，是连太阳引力也能逃逸、离开太阳系进入星际空间所需的速度——旅行者号正在这条路上。看看探测器螺旋飞出，掠过各行星，再也不回来。',
+  },
+  'sphere-of-influence': {
+    title: '引力影响范围',
+    body: '谁的引力占上风？每个天体周围都有一个区域——它的影响范围——在其内部它的引力占主导地位。它们层层嵌套：巨大的太阳球笼罩整个系统；在其中地球划出自己的范围（≈924,000 公里）；而在其中月球（距离 384,400 公里）又划出更小的范围。这种嵌套就是月球绕地球转而非直接绕太阳转的原因——越过边界，下一个更大的天体就接管了。任务设计者利用这一点，把航天器从一个影响范围交接到下一个，当作一连串简单的二体问题。',
+  },
+  'gravity-assist-1': {
+    title: '引力弹弓——旅行者 1 号',
+    body: '航天器可以窃取行星的一小部分轨道运动：在行星后方近距离飞掠，行星的引力把探测器向前甩出，更快，免费——这就是引力弹弓。旅行者 1 号于 1977 年 9 月发射，借助木星（1979）甩向土星（1980），随后土星的卫星泰坦的近距离飞掠将其轨道向上弯折，离开了行星平面，飞向星际空间。时钟运行真实的日期——看着行星在探测器到达时移动到合适的位置。',
+  },
+  'gravity-assist-2': {
+    title: '引力弹弓——旅行者 2 号（壮丽之旅）',
+    body: '旅行者 2 号（1977 年 8 月发射）赶上了一次约每 175 年才出现一次的罕见排列：它串联了全部四颗巨行星——木星（1979）、土星（1981）、天王星（1986）、海王星（1989）——每次飞掠都弯折其路径，将其抛得更远，一次仅靠火箭不可能完成的旅行。这里的日期同样是真实的：巨行星们排列成壮丽之旅的阵线，探测器依次与每一颗相遇。',
+  },
+  'spacetime': {
+    title: '爱因斯坦：引力是弯曲的时空',
+    body: '到目前为止的一切都是牛顿的图景——质量跨越空间互相拉拽。它能漂亮地预测轨道，但爱因斯坦的广义相对论（1915）走得更深。质量和能量弯曲了周围的空间和时间本身，就像重球压弯了一张拉紧的橡胶膜。附近的物体不是被力"拉"过来的——它只是沿着弯曲空间中最直的路径运动，滚入凹陷中。但牛顿并没有错：当引力较弱且速度远低于光速时，爱因斯坦的理论恰好变成牛顿的定律——你刚才一直看到的下坠轨道，只是有了更深层的解释。',
+  },
+  'mercury-precession': {
+    title: '证据：水星的轨道在进动',
+    body: '这里不再是哲学。水星的椭圆轨道并不闭合——它的近日点（离太阳最近的点）每绕一圈就略微移动一点。牛顿在考虑了其他行星的拉扯后，预测了其中大部分，但每世纪还差 43 角秒。这个微小的差距几十年来一直无法解释——直到广义相对论精确地预测了 43″。太阳的弯曲时空使轨道旋转。这里被极大夸张了，让你可以看到椭圆转动并描出一朵玫瑰线；蓝线标记了进动中的近日点。',
+  },
+};
+
 const UI = {
   en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step', playCta: 'Play with narration & music' },
+  zh: { tour: '导览', explore: '自由探索 ✕', back: '‹ 上一步', next: '下一步 ›', finish: '完成 ✓', speed: '时间速度', step: '第', playCta: '播放旁白与音乐' },
   pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok', playCta: 'Odtwórz z narracją i muzyką' },
 };
 
@@ -442,7 +543,16 @@ export class Tour {
   private speedRange: HTMLInputElement;
   private speedVal: HTMLElement;
   private active = false;
-  private lang: Lang = (localStorage.getItem('gravity-lang') as Lang) === 'pl' ? 'pl' : 'en';
+  private lang: Lang = this.detectLang();
+
+  private detectLang(): Lang {
+    const stored = localStorage.getItem('gravity-lang') as Lang | null;
+    if (stored === 'en' || stored === 'pl' || stored === 'zh') return stored;
+    const nav = navigator.language;
+    if (nav.startsWith('pl')) return 'pl';
+    if (nav.startsWith('zh')) return 'zh';
+    return 'en';
+  }
   // Narrated auto-play: plays each slide's audio, then waits 5s and advances.
   private autoPlay = false;
   private audio = new Audio();
@@ -465,6 +575,7 @@ export class Tour {
         <span class="tour-eyebrow">${UI[this.lang].tour}</span>
         <div class="lang-switch">
           <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="zh">ZH</button>
           <button class="lang-btn" data-lang="pl">PL</button>
         </div>
         <button class="tour-auto" title="Auto-play narration" aria-label="Auto-play narration">▶</button>
@@ -831,6 +942,7 @@ export class Tour {
   /** Title + body for a step in the current language (falls back to English). */
   private localized(step: TourStep): { title: string; body: string } {
     if (this.lang === 'pl' && PL[step.id]) return PL[step.id];
+    if (this.lang === 'zh' && ZH[step.id]) return ZH[step.id];
     return { title: step.title, body: step.body };
   }
 
