@@ -29,10 +29,6 @@ services:
       - "${DEV_PORT:-5173}:5173"
     # --host binds Vite to 0.0.0.0 so the port is reachable outside the container.
     command: sh -c "npm install && npm run dev -- --host"
-    environment:
-      - ELEVENLABS_API_KEY
-      - ELEVEN_VOICE_ID
-      - ELEVEN_MODEL
     profiles:
       - dev
 
