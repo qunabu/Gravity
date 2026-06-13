@@ -1,0 +1,36 @@
+name: gravity
+
+services:
+  # Production — builds the static bundle and serves it with nginx.
+  app:
+    build:
+      context: .
+      target: runner
+    image: ${IMAGE_NAME:-gravity}:${IMAGE_TAG:-latest}
+    ports:
+      - "${APP_PORT:-8080}:80"
+    restart: ${RESTART_POLICY:-unless-stopped}
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: ${HEALTHCHECK_INTERVAL:-30s}
+      timeout: ${HEALTHCHECK_TIMEOUT:-5s}
+      retries: ${HEALTHCHECK_RETRIES:-3}
+      start_period: ${HEALTHCHECK_START_PERIOD:-10s}
+
+  # Development — Vite HMR dev server with source mounted from the host.
+  # Usage: docker compose --profile dev up dev
+  dev:
+    image: node:${NODE_VERSION:-20-alpine}
+    working_dir: /app
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+    ports:
+      - "${DEV_PORT:-5173}:5173"
+    # --host binds Vite to 0.0.0.0 so the port is reachable outside the container.
+    command: sh -c "npm install && npm run dev -- --host"
+    profiles:
+      - dev
+
+volumes:
+  node_modules:
