@@ -42,6 +42,7 @@ export function buildUI(world: World, onStartTour: () => void): () => void {
         <label class="chk"><input type="checkbox" id="cOrbits" checked> Orbit paths</label>
         <label class="chk"><input type="checkbox" id="cMoons"> Moons <span class="tag">heavier</span></label>
         <label class="chk"><input type="checkbox" id="cProj"> Projection lines onto ecliptic</label>
+        <label class="chk"><input type="checkbox" id="cAxes"> Rotation axes</label>
         <label class="chk"><input type="checkbox" id="cLabels" checked> Labels</label>
       </div>
 
@@ -113,6 +114,11 @@ export function buildUI(world: World, onStartTour: () => void): () => void {
   (app.querySelector('#cProj') as HTMLInputElement).addEventListener('change', (e) => {
     world.state.showProjection = (e.target as HTMLInputElement).checked;
   });
+  (app.querySelector('#cAxes') as HTMLInputElement).addEventListener('change', (e) => {
+    // Each body's spin axis, tilted by its real obliquity — Uranus on its side,
+    // Venus and Pluto flipped past 90° into retrograde.
+    world.state.showAxes = (e.target as HTMLInputElement).checked;
+  });
   (app.querySelector('#cLabels') as HTMLInputElement).addEventListener('change', (e) => {
     world.state.showLabels = (e.target as HTMLInputElement).checked;
   });
@@ -176,6 +182,7 @@ export function buildUI(world: World, onStartTour: () => void): () => void {
       : 'Visual scale — sizes & distances compressed so everything is visible.';
     (app.querySelector('#cOrbits') as HTMLInputElement).checked = st.showOrbits;
     (app.querySelector('#cProj') as HTMLInputElement).checked = st.showProjection;
+    (app.querySelector('#cAxes') as HTMLInputElement).checked = st.showAxes;
     (app.querySelector('#cLabels') as HTMLInputElement).checked = st.showLabels;
     (app.querySelector('#cMoons') as HTMLInputElement).checked = st.showMoons;
     // Invert the log speed mapping to position the slider.
