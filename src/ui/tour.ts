@@ -57,7 +57,7 @@ export interface TourStep {
   /** Follow with a 3/4 side view (so an axial tilt reads as a lean). */
   sideFollow?: boolean;
   /** A "go deeper" link shown under the narration (bilingual label). */
-  link?: { href: string; en: string; pl: string };
+  link?: { href: string } & Record<Lang, string>;
 }
 
 /** Terms in the narration worth a click. The first mention in a slide's body
@@ -65,6 +65,7 @@ export interface TourStep {
 const GLOSSARY: Record<Lang, { term: string; href: string }[]> = {
   en: [{ term: 'barycenter', href: 'https://en.wikipedia.org/wiki/Barycenter' }],
   pl: [{ term: 'barycentrum', href: 'https://pl.wikipedia.org/wiki/Barycentrum' }],
+  zh: [{ term: '质心', href: 'https://zh.wikipedia.org/wiki/质心' }],
 };
 
 /** Bartosz Ciechanowski's interactive Moon explainer — offered on every slide
@@ -73,6 +74,7 @@ const MOON_LINK = {
   href: 'https://ciechanow.ski/moon/',
   en: 'Go deeper on the Moon — Bartosz Ciechanowski’s interactive explainer ↗',
   pl: 'Zgłęb temat Księżyca — interaktywne wyjaśnienie Bartosza Ciechanowskiego ↗',
+  zh: '深入了解月球 — Bartosz Ciechanowski 的交互式讲解 ↗',
 };
 
 function fmtSpeed(dps: number): string {
@@ -534,7 +536,7 @@ export const STEPS: TourStep[] = TOUR_ORDER.map((id) => {
   return step;
 });
 
-export type Lang = 'en' | 'pl';
+export type Lang = 'en' | 'pl' | 'zh';
 
 // Polish translations, keyed by step id. UI chrome strings below.
 export const PL: Record<string, { title: string; body: string }> = {
@@ -712,9 +714,186 @@ export const PL: Record<string, { title: string; body: string }> = {
   },
 };
 
+// Chinese translations, keyed by step id.
+export const ZH: Record<string, { title: string; body: string }> = {
+  'what-is-gravity': {
+    title: '什么是引力？',
+    body: '引力是任意两个质量之间的吸引力：F = G · m₁·m₂ / r² — 质量越大越强，距离的平方越大越弱。这里只有两个天体。箭头显示彼此施加的拉力：大小相等、方向相反（牛顿第三定律），约 3.5 × 10²² 牛顿。太阳约是地球的 333,000 倍重，因此同样的力几乎无法撼动太阳，却足以让地球飞驰。这一条规则就是全部的故事——接下来我们会看到，正是它构建了这些天体。',
+  },
+  'birth-of-sun': {
+    title: '引力构建了太阳',
+    body: '约 46 亿年前，还没有行星——只有一片巨大、寒冷的气体尘埃云（太阳星云）。每一粒尘埃都吸引着其他每一粒。引力将星云向内拉拽，随着坍缩，它旋转成一个扁平的圆盘，中心是一个致密且不断增长的核心。当核心变得足够热、足够重，引燃核聚变时，太阳就被点亮了。看尘埃如何汇聚在一起。',
+  },
+  'birth-of-earth': {
+    title: '引力构建了地球',
+    body: '同样的事情在年轻的太阳周围以缩小的规模上演。在残留的圆盘中，尘埃颗粒互相粘合，它们不断增长的引力又席卷了更多物质——这个雪崩式的过程叫做吸积。卵石变成巨石，巨石变成星子，星子合并成行星。地球就是这样一颗由岩石和金属积聚而成的球体。点燃太阳的那股力量，也组装了你脚下的土地。',
+  },
+  'inertia': {
+    title: '运动的物体保持运动',
+    body: '现在把太阳完全移除。在没有外力作用的情况下，地球遵循牛顿第一定律：它以恒定的 29.8 km/s 永远沿着一条完美的直线漂移（绿色箭头 = 它的速度）。这就是惯性。单凭运动，只能走直线——永远不会是曲线，永远不会是圆。必须有某种东西来弯曲路径。在进入下一步之前，请记住这颗漂移的地球。',
+  },
+  'why-no-fall': {
+    title: '为什么地球不会掉进太阳',
+    body: '把它们结合起来。太阳的引力（红色箭头）始终把地球直直拉向自己——那为什么没有碰撞？因为地球同时在以 29.8 km/s 横向运动（绿色箭头）。每一刻它确实在向太阳坠落，但横向速度带着它飞过——它不断"错过"。虚线显示了仅靠惯性它会飞向哪里；引力将那直线路径弯成一个闭合的圈。轨道就是持续地坠落，并且永远地错过。',
+  },
+  'too-slow': {
+    title: '太慢——它会坠落',
+    body: '轨道是一种平衡，速度维持着天体。给地球太少的横向速度，引力就会取胜：路径弯曲得太厉害，它不是绕圈，而是扎向太阳。一颗运动太慢的行星不会绕轨——它会坠落。',
+  },
+  'too-fast': {
+    title: '太快——它会逃离',
+    body: '现在反过来。把地球推到"逃逸速度"以上，引力就再也抓不住它了：路径仍然弯曲，但永远不会闭合。地球绕太阳飞过一次后就飞向太空，永不返回。太慢和太快之间，是产生稳定轨道的狭窄速度范围。',
+  },
+  'rocket-too-slow': {
+    title: '低于轨道速度——它会掉回来',
+    body: '火箭要多快才能离开地球？横向发射得太慢，它只是划一道弧线就掉回来：引力在它完成一圈之前就把它拉回地面。无论方向如何，速度不够总是同样的结局——坠落。',
+  },
+  'first-cosmic': {
+    title: '第一宇宙速度——入轨',
+    body: '给它刚好足够的横向速度——第一宇宙速度，≈ 7.9 km/s——它就不再掉回来了。现在火箭围绕着地球坠落，而不是掉到地球上，进入圆形轨道。这就是近地轨道上每一颗卫星的速度。',
+  },
+  'second-cosmic': {
+    title: '第二宇宙速度——逃逸',
+    body: '推到第二宇宙速度，≈ 11.2 km/s（恰好是第一宇宙速度的 √2 倍），火箭便不再绕轨——它彻底挣脱地球的引力，飞向远方。这就是前往月球或其他星球所需的逃逸速度。',
+  },
+  'earth-moon': {
+    title: '地球和月球',
+    body: '同样的规则嵌套在每个尺度上。月球（地球质量的 1.2%）被地球引力牵引，每 27.3 天在 384 400 公里外绕行一圈——轨道之中的轨道。它还被潮汐锁定了。地球的引力在月球上隆起一个鼓包，缓慢地给它的自转刹车，直到自转一圈所花的时间恰好等于公转一圈——都是 27.3 天。因为这两者相等，同一个近地面就被永久地朝向我们：下方那张由暗色月海构成的熟悉面孔，会跟着月球绕完整整一圈。它背后的那半球是远地面，而不是暗面——在一个月里它接受的阳光和近地面一样多；只是在 1959 年月球 3 号拍下它之前，从没有人见过它。稍后在面板中把物理切换到"N 体"，就能看到月球把地球拉回来，两者绕着共同的质心摆动。',
+  },
+  'moon-no-fall': {
+    title: '为什么月球不掉到地球上',
+    body: '这和地球与太阳的平衡完全相同，只是向下移了一层。地球的引力（红色箭头）把月球直直拉向我们——约 2 × 10²⁰ N——但它从未坠落。月球同时在以 1.02 km/s 横向运动（绿色箭头）：每一刻它都在向地球坠落，但速度带着它飞过，所以它绕圈而非着陆。虚线显示了没有引力时它会径直飞向何处。它已经围绕我们坠落——并不断错过——长达 45 亿年。',
+  },
+  'into-3d': {
+    title: '进入第三维',
+    body: '轨道并非完全平坦。月球的轨道相对地球轨道倾斜 5.1°，每颗行星的轨道都相对于黄道面倾斜。旋转到 3D 视角来看这些倾角——拖拽可旋转摄像机。在面板中切换"投影"，将每个天体投影到二维平面上，看看 3D 位置如何向下投影。',
+  },
+  'self-rotation': {
+    title: '绕自身轴旋转',
+    body: '绕太阳公转只是运动的一半——每个天体还围绕自身轴自转，独立于轨道。地球每 23 小时 56 分钟自转一次（一个恒星日），自转轴倾斜 23.4°（蓝色线）。自转带来昼夜；倾斜带来四季。自转速率差异极大：木星不到 10 小时转一圈，而金星需要 243 天——而且是倒着转。看地球旋转。',
+  },
+  'sun-moving': {
+    title: '太阳也在动——轨道其实是螺旋线',
+    body: '我们把每个轨道都画成了扁平、闭合的圈——但那只是相对于太阳。太阳本身并非静止：它以约 230 km/s 的速度在银河系中飞奔，带着整个太阳系一起前进。因此一颗行星在空间中的真实路径永远不会闭合。它在围绕太阳旋转的同时被拖着向前，描绘出一条长长的三维螺旋线。每条彩色轨迹都是一颗行星的真实空间路线；太阳的轨迹是它们缠绕的那条直线。',
+  },
+  'sun-moving-vectors': {
+    title: '同样的力，依然在起作用',
+    body: '即使在完全三维的运动中，物理规律也没有改变。每颗行星仍然感受到引力（红色）直直拉向太阳，仍然具有速度（绿色）——只是那个速度现在沿螺旋线运动，而非绕一个扁平的圆。引力在每一个瞬间弯曲路径；向前漂移将每个圈拉伸成螺旋。相同的 F = G·m₁·m₂/r²，相同的坠落-与-错过——只是从太阳的运动参考系中看到的样子。',
+  },
+  'sun-moving-moons': {
+    title: '卫星也跟着飞',
+    body: '嵌套一直延伸到最底层。当太阳拉着地球沿其螺旋运动时，地球也拉着月球——所以月球的轨迹是缠绕在地球螺旋上的一条螺旋，而地球的螺旋又缠绕在太阳的路径上。每个天体都同时在绕轨、被携带、以及携带自己的卫星。空间中的真实运动是螺旋中的螺旋。',
+  },
+  'solar-system': {
+    title: '整个太阳系',
+    body: '接下来是剩下的：八颗行星（外加冥王星）和它们的主要卫星，全部在真实的 J2000 轨道上，具有准确的尺寸和距离，每颗都在绕自身轴旋转。用面板在"视觉比例"和"真实比例"（行星变成它们真实大小的微粒）之间切换，开启 N 体引力，改变速度，聚焦任意天体。自由探索。',
+  },
+  'third-cosmic': {
+    title: '第三宇宙速度——离开太阳系',
+    body: '再向外迈出最后一步。即使逃离了地球，探测器仍然被太阳束缚着。第三宇宙速度，从地球出发约 16.7 km/s，是连太阳引力也能逃逸、离开太阳系进入星际空间所需的速度——旅行者号正在这条路上。看看探测器螺旋飞出，掠过各行星，再也不回来。',
+  },
+  'sphere-of-influence': {
+    title: '引力影响范围',
+    body: '谁的引力占上风？每个天体周围都有一个区域——它的影响范围——在其内部它的引力占主导地位。它们层层嵌套：巨大的太阳球笼罩整个系统；在其中地球划出自己的范围（≈924,000 公里）；而在其中月球（距离 384,400 公里）又划出更小的范围。这种嵌套就是月球绕地球转而非直接绕太阳转的原因——越过边界，下一个更大的天体就接管了。任务设计者利用这一点，把航天器从一个影响范围交接到下一个，当作一连串简单的二体问题。',
+  },
+  'gravity-assist-1': {
+    title: '引力弹弓——旅行者 1 号',
+    body: '航天器可以窃取行星的一小部分轨道运动：在行星后方近距离飞掠，行星的引力把探测器向前甩出，更快，免费——这就是引力弹弓。旅行者 1 号于 1977 年 9 月发射，借助木星（1979）甩向土星（1980），随后土星的卫星泰坦的近距离飞掠将其轨道向上弯折，离开了行星平面，飞向星际空间。时钟运行真实的日期——看着行星在探测器到达时移动到合适的位置。',
+  },
+  'gravity-assist-2': {
+    title: '引力弹弓——旅行者 2 号（壮丽之旅）',
+    body: '旅行者 2 号（1977 年 8 月发射）赶上了一次约每 175 年才出现一次的罕见排列：它串联了全部四颗巨行星——木星（1979）、土星（1981）、天王星（1986）、海王星（1989）——每次飞掠都弯折其路径，将其抛得更远，一次仅靠火箭不可能完成的旅行。这里的日期同样是真实的：巨行星们排列成壮丽之旅的阵线，探测器依次与每一颗相遇。',
+  },
+  'spacetime': {
+    title: '爱因斯坦：引力是弯曲的时空',
+    body: '到目前为止的一切都是牛顿的图景——质量跨越空间互相拉拽。它能漂亮地预测轨道，但爱因斯坦的广义相对论（1915）走得更深。质量和能量弯曲了周围的空间和时间本身，就像重球压弯了一张拉紧的橡胶膜。附近的物体不是被力"拉"过来的——它只是沿着弯曲空间中最直的路径运动，滚入凹陷中。但牛顿并没有错：当引力较弱且速度远低于光速时，爱因斯坦的理论恰好变成牛顿的定律——你刚才一直看到的下坠轨道，只是有了更深层的解释。',
+  },
+  'mercury-precession': {
+    title: '证据：水星的轨道在进动',
+    body: '这里不再是哲学。水星的椭圆轨道并不闭合——它的近日点（离太阳最近的点）每绕一圈就略微移动一点。牛顿在考虑了其他行星的拉扯后，预测了其中大部分，但每世纪还差 43 角秒。这个微小的差距几十年来一直无法解释——直到广义相对论精确地预测了 43″。太阳的弯曲时空使轨道旋转。这里被极大夸张了，让你可以看到椭圆转动并描出一朵玫瑰线；蓝线标记了进动中的近日点。',
+  },
+  'early-universe': {
+    title: '恒星出现之前',
+    body: '把一切倒回 138 亿年前。没有行星，没有恒星，没有星系——只有氢和氦，几乎完美均匀地铺开，平滑到十万分之一。只是"几乎"。那些微弱的涟漪就已足够。哪里的气体稍微稠密一点，它就拉得更用力一点，于是聚集更多气体，于是拉得更用力。在数亿年的时间里，这场失控的过程抽空了空洞，把一切拉进由纤维和结点织成的网——而在结点稠密到一定程度的地方，第一批恒星被点燃了。每一个星系、每一颗恒星、每一颗行星，还有我们每一个人，都坐落在那张网的一根丝线上。引力耐心地放大着几乎为零的差异，建造了这一切——而在其中一根丝线的一个结点里，我们自己的太阳即将成形。',
+  },
+  'tides': {
+    title: '潮汐：海洋为何一天呼吸两次',
+    body: '引力随距离减弱，所以月球拉近地一侧海水的力大于拉地心的力，而拉地心的力又大于拉远地一侧的力。这个差值——潮汐力——把海洋拉伸成两个隆起，一个朝向月球，一个正对着背面。地球每天自转着穿过这两个隆起，因此多数海岸每天迎来两次高潮和两次低潮。同样的拉伸作用经过亿万年，正是它把月球的自转锁定到了公转上。',
+  },
+  'geoid': {
+    title: '地球的引力并不均匀',
+    body: '我们一直把地球当作一个光滑的质量球，但它并不是。山脉、海沟、厚重的大陆根，以及地幔中更致密的团块，都会让引力稍强或稍弱，因此引力强度因地而异。大地测量学家用大地水准面来描述它——如果海平面只由引力决定，海洋会稳定成的形状。它的起伏跨度约 200 米：印度以南有一片引力最弱的巨大低区，西太平洋和北大西洋上则是高区。这里的起伏被放大了数万倍，好让你能看见；NASA 的 GRACE 卫星通过观测两颗飞船飞越每处异常时的加速与减速来测量它。',
+  },
+  'polaris': {
+    title: '北极星为何纹丝不动',
+    body: '地球以每秒 30 公里绕太阳飞奔，从轨道的一侧到另一侧要跨越 3 亿公里——可北极星整年都待在北方地平线上方的同一个位置。有两个原因。第一，无论地球走到轨道的哪一段，自转轴在空间中始终指向同一方向；旋转的物体会保持它的指向。第二，北极星远在 433 光年之外，因此我们整条轨道的宽度让它的视位置移动的幅度，远小于肉眼能察觉的程度。不过这个指向并非完全冻结：太阳和月球的引力拉扯着地球隆起的赤道，使自转轴像一只缓慢的陀螺那样摇摆，每 26 000 年在天上画一个圈。12 000 年后的极星将是织女星。',
+  },
+  'light-lag': {
+    title: '八分十九秒',
+    body: '太阳系不只是大——它是相对于宇宙中最快的东西而言的大。光每秒跑 300 000 公里，却仍要 8 分 19 秒才能从太阳到达我们这里。你从来看不到此刻的太阳，你看到的是它过去的样子。看着波前向外扫过：火星 12 分钟，木星三刻钟，海王星在四个多小时之外。而且这不只关乎光。引力以完全相同的速度传播。如果太阳此刻凭空消失，地球仍会沿着轨道继续弯行 8 分 19 秒——它消失的消息，会和它最后的光一同抵达。',
+  },
+  'magnetosphere': {
+    title: '地球周围的护盾',
+    body: '太阳不只发光——它还在吹。每秒一百万吨的带电粒子以每秒 400 公里向外奔流，太阳风暴期间更是远超此数。地球把它们偏转开。地核中翻腾的熔融铁驱动着一台发电机，它产生的磁场在这股风中挖出一个空腔：朝阳一侧被压缩到十个地球半径，背阳一侧则被拉成一条远远越过月球的长尾。少数溜进来的粒子沿着磁力线螺旋下落到两极，把空气点亮成极光。火星曾经也有磁场，后来失去了，太阳风从此一直在剥离它的大气。引力把空气按在地面上；磁场则让它不被吹走。',
+  },
+  'lagrange': {
+    title: '拉格朗日点：太空中的停车位',
+    body: '通常你绕太阳的轨道越靠内，就必须跑得越快——橙色的点正是一个位于地球轨道内侧、独自这样运行的天体，它稳定地跑在我们前面。但在五个特定的位置上，地球的引力（蓝色箭头）恰好抵消掉一部分太阳的引力（橙色箭头），刚好把一年重新拉长回 365 天。停在那里的航天器能与地球保持相对静止，所以你看到的整个图案作为一个整体，每年转一圈。L1 和 L2 驻扎着伟大的天文台——SOHO 在 L1 观测太阳，詹姆斯·韦布望远镜坐在 L2 的地影方向——但两者都是鞍点而非碗底：探测器会滑落，必须不断点火修正，就像这两个正在做的那样。前后各 60 度的 L4 和 L5 才是真正的碗：被推离的岩石会沿着长长的回路荡回来，于是小行星越聚越多。木星的 L4 和 L5 里，特洛伊小行星数以千计。',
+  },
+  'resonance': {
+    title: '轨道共振：引力打着拍子',
+    body: '当公转周期形成小整数比时，一次次温和的拉扯会累加而不是互相抵消。木星最内侧的三颗伽利略卫星被锁在 1:2:4 的拉普拉斯共振里——木卫二每绕木卫三一圈，木卫一恰好绕木卫二两圈。同样的节拍在小行星带中凿出柯克伍德空隙，也牧放着土星环。看这些卫星一次又一次回到同一排列。',
+  },
+  'venus-rose': {
+    title: '金星绘出的玫瑰',
+    body: '共振会留下可以画出来的签名。金星每 224.7 天绕太阳一圈，地球每 365.3 天一圈——两者接近 13 比 8，因此这一对天体每八年几乎完全重复一次彼此的相对位置。每隔几天在两颗行星之间画一条线，这些近似的重复就会织出一朵五瓣玫瑰。它接近完美，却不完美：图案每个周期漂移约两天，所以这朵花在缓慢地旋转。正是同一个近共振让金星每八年回到相同的昏星位置，也正是这类图案，让古代天文学家相信天穹是按钟表运转的。',
+  },
+  'heliosphere': {
+    title: '包裹太阳系的气泡',
+    body: '太阳风一直向外吹，直到再也推不开星际之间的稀薄气体。在它最终减速到声速以下的地方——大约是地球到太阳距离的 94 倍——它穿过终端激波。再往外是湍动的日鞘，而在大约 120 天文单位处是日球层顶：太阳影响力的真正边界，它的风在这里让位给银河系的风。我们迎面犁进去的那一侧是钝的，身后则被拉成一条长尾。旅行者 1 号在 2012 年、旅行者 2 号在 2018 年穿过它——这是仅有的两件离开过这个气泡的人造物。不过引力伸得远得多：在这道边界之外一千倍的地方，太阳依然牵着彗星。',
+  },
+  'exoplanet': {
+    title: '我们如何发现其他世界',
+    body: '行星并不是单纯地绕着恒星转——两者都绕着共同的质心摆动。恒星在行星的拉扯下画出一个微小的圆。大多数系外行星我们无法直接看到，但可以探测到这种摆动：恒星靠近时光线偏蓝，远离时偏红。木星让我们自己的太阳画出的圈，大约相当于太阳自身的半径；正是这种泄露天机的舞步，让人类发现了数以千计的遥远世界。',
+  },
+  'milky-way': {
+    title: '银河系与银河年',
+    body: '再往后退，退得比此前任何轨道都远。我们的太阳是银河系几千亿颗恒星中的一颗，位于一条旋臂上，距中心约三分之二处。它以每秒约 230 公里绕银河系运行——可银河系实在太大，绕行一圈，也就是一个"银河年"，要花大约 2.3 亿年。上一次太阳经过这里时，恐龙才刚刚登场。牵住一颗卫星的，和把整个星系聚在一起的，是同一种引力。',
+  },
+  'cosmic-motion': {
+    title: '你从未静止',
+    body: '就算你一动不动地坐着，也同时被四种运动带着走，每一种都骑在上一种之上。地球自转在赤道把你以每秒 0.46 公里向东扫去。地球又以每秒 29.8 公里带你绕太阳。太阳再以每秒 230 公里带着整个太阳系绕银河系。而银河系本身正朝巨引源坠落，于是相对于宇宙中最古老的光——宇宙微波背景——你正以每秒约 370 公里运动。这些运动中的每一种都是一次坠落：一个物体在弯曲的空间里尽可能笔直地前行。上方的计数器显示的，是这张幻灯片打开以来你已经走过的距离。',
+  },
+  'sagittarius-a': {
+    title: '人马座 A*：中心的巨兽',
+    body: '银河系的心脏处潜伏着一个超大质量黑洞，人马座 A*，质量约为四百万个太阳。我们知道它在那里，是因为几十年来一直看着恒星绕着它飞掠。恒星 S2 每十六年沿一条极扁的椭圆掠过一次，最接近时达到光速的 3%——绕着一个看不见的点做纯粹的开普勒与爱因斯坦式运动。这些轨道赢得了一座诺贝尔奖，也称出了这头看不见的巨兽有多重。',
+  },
+  'dark-matter': {
+    title: '消失的质量',
+    body: '在这里，引力递给我们一个谜。按照第一张幻灯片里的那条定律，远离星系中心的恒星应该比靠近中心的转得慢——就像海王星慢吞吞而水星飞奔。但它们并没有：外围恒星和内侧恒星跑得一样快，速度曲线顽固地保持平坦。唯一的解释是存在大量看不见的质量——"暗物质"——其总量五倍于所有恒星。我们已经测绘了整个太阳系，而宇宙的大部分，仍然是我们看不见的东西。',
+  },
+  'lensing': {
+    title: '弯折的星光',
+    body: '如果质量弯曲时空，那么连没有质量的光也必须顺着这道弯曲走。爱因斯坦预言，太阳会偏折从它边缘掠过的星光，让那些恒星的视位置发生移动。1919 年的日全食期间，爱丁顿测到的正是这个偏折，爱因斯坦一夜之间享誉世界。今天这种"引力透镜"把整个星系变成了宇宙放大镜。这里有一颗恒星正好位于太阳背后，我们却看到它偏在一旁——它的光绕着这团质量被弯折了。',
+  },
+  'time-dilation': {
+    title: '引力中时间走得更慢',
+    body: '质量不只弯曲空间——它还让时间变慢。深陷引力井中的钟，比远处的钟走得慢。这个效应在地球上很微小，却是真实的：正因为如此，位于更高处、场更弱的 GPS 卫星必须每天把时钟校正约 38 微秒——否则导航在几小时内就会偏差几公里。这里，质量旁边的那口钟稳定地落后于远处的那口。引力和时间，说的是同一件事。',
+  },
+  'black-hole': {
+    title: '黑洞：没有底的井',
+    body: '把足够多的质量塞进足够小的空间，时空之井就会变得没有底。在事件视界之内，逃离需要超过光速——所以什么都出不来，连光也不行。就在视界之外，气体螺旋下落并被加热到数百万度，作为吸积盘熊熊燃烧，而光本身能在薄如刀刃的光子环里绕着黑洞转圈。这正是你一路看过来的那种坠落与弯曲，被推到了绝对的极端。',
+  },
+  'gravitational-waves': {
+    title: '引力波：时空的涟漪',
+    body: '当两个黑洞相互旋进时，它们狂暴的共舞撼动了时空本身，把涟漪以光速向外送出。随着旋进，轨道越收越紧、越转越快，直到在最后一声啁啾中并合。2015 年，LIGO 探测器捕捉到了这样一列波，来自 13 亿年前相撞的两个黑洞——它让 4 公里长的干涉臂伸缩了不到一个质子宽度的千分之一。在爱因斯坦预言它们一个世纪之后，我们终于听见了宇宙的鸣响。',
+  },
+};
+
 const UI = {
   en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step', playCta: 'Play with music', issue: 'Something not right?' },
   pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok', playCta: 'Odtwórz z muzyką', issue: 'Coś nie tak?' },
+  zh: { tour: '导览', explore: '自由探索 ✕', back: '‹ 上一步', next: '下一步 ›', finish: '完成 ✓', speed: '时间速度', step: '第', playCta: '播放音乐', issue: '哪里不对？' },
 };
 
 export function stepIndexFromHash(): number {
@@ -737,7 +916,18 @@ export class Tour {
   private speedRange: HTMLInputElement;
   private speedVal: HTMLElement;
   private active = false;
-  private lang: Lang = (localStorage.getItem('gravity-lang') as Lang) === 'pl' ? 'pl' : 'en';
+  private lang: Lang = this.detectLang();
+
+  /** A remembered choice wins; failing that, follow the browser's language. */
+  private detectLang(): Lang {
+    const stored = localStorage.getItem('gravity-lang') as Lang | null;
+    if (stored === 'en' || stored === 'pl' || stored === 'zh') return stored;
+    const nav = navigator.language;
+    if (nav.startsWith('pl')) return 'pl';
+    if (nav.startsWith('zh')) return 'zh';
+    return 'en';
+  }
+
   // Auto-play: shows each slide for its estimated read time, then advances.
   private autoPlay = false;
   private autoTimer: number | undefined;
@@ -758,6 +948,7 @@ export class Tour {
         <span class="tour-eyebrow">${UI[this.lang].tour}</span>
         <div class="lang-switch">
           <button class="lang-btn" data-lang="en">EN</button>
+          <button class="lang-btn" data-lang="zh">ZH</button>
           <button class="lang-btn" data-lang="pl">PL</button>
         </div>
         <button class="tour-skip">${UI[this.lang].explore}</button>
@@ -937,7 +1128,7 @@ export class Tour {
 
     const loc = this.localized(step);
     const ui = UI[this.lang];
-    this.titleEl.textContent = `${ui.step} ${this.index + 1} · ${loc.title}`;
+    this.titleEl.textContent = `${this.stepLabel(this.index + 1)} · ${loc.title}`;
     this.renderBody(loc.body);
     if (step.link) {
       this.linkEl.href = step.link.href;
@@ -1137,13 +1328,22 @@ export class Tour {
     }
   }
 
+  /** "Step 4" / "Krok 4" / "第 4 步" — Chinese needs the number between the
+   *  ordinal marker and its measure word, not trailing after it. */
+  private stepLabel(n: number): string {
+    return this.lang === 'zh' ? `第 ${n} 步` : `${UI[this.lang].step} ${n}`;
+  }
+
   /** Write the narration, turning the first mention of any glossary term into
    *  a link. Text is inserted as nodes (never as HTML), so it stays inert. */
   private renderBody(text: string): void {
     this.bodyEl.textContent = '';
     let rest = text;
     for (const { term, href } of GLOSSARY[this.lang]) {
-      const at = new RegExp(`\\b${term}\\b`, 'i').exec(rest);
+      // \b is defined against [A-Za-z0-9_], so it never fires next to a CJK
+      // character — only ask for word boundaries when the term has them.
+      const bounded = /^[\w-]+$/.test(term);
+      const at = new RegExp(bounded ? `\\b${term}\\b` : term, 'i').exec(rest);
       if (!at) continue;
       this.bodyEl.appendChild(document.createTextNode(rest.slice(0, at.index)));
       const a = document.createElement('a');
@@ -1161,6 +1361,7 @@ export class Tour {
   /** Title + body for a step in the current language (falls back to English). */
   private localized(step: TourStep): { title: string; body: string } {
     if (this.lang === 'pl' && PL[step.id]) return PL[step.id];
+    if (this.lang === 'zh' && ZH[step.id]) return ZH[step.id];
     return { title: step.title, body: step.body };
   }
 
