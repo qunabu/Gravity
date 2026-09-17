@@ -62,9 +62,17 @@ public/          static assets served at root (e.g. earth_daymap.jpg)
 behavior in the per-frame `update()` loop. Each mode typically has a `startX()`
 method (sets camera + state) and a branch in the update loop / `updateAstro()`.
 Existing modes: `normal`, `inertia`, `accretion`, `helix`, `orbit-intro`,
-`rocket`, `soi` (spheres of influence), `flyby` (Voyager gravity assists), and
-`spacetime` (Einstein's curved-spacetime grid). Camera moves via an eased
-`flyTo`; on the tour, releasing a drag springs the camera back to the framing.
+`rocket`, `soi` (spheres of influence), `flyby` (Voyager gravity assists),
+`spacetime` (Einstein's curved-spacetime grid), `precession`, `lagrange`,
+`tides`, `exoplanet`, `resonance`, `lensing`, `timedilation`, `blackhole`,
+`gwaves`, `milkyway`, `sgra`, `darkmatter`, plus `lightlag`, `geoid`,
+`magnetosphere`, `heliosphere`, `venusrose`, `polaris`, `cosmicmotion` and
+`earlyuniverse`. The last group shares one shape: a `buildX()`
+that makes a hidden `Group` once (registered in `buildExtras()` and in the two
+lists at the top of `updateExtras()`), a `startX()` that calls `beginExtra()` and
+frames the camera, and a branch in `updateExtras()` that animates it. Camera
+moves via an eased `flyTo`; on the tour, releasing a drag springs the camera back
+to the framing.
 
 ## Conventions
 

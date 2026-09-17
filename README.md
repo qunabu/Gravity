@@ -3,7 +3,7 @@
 An interactive, physically grounded model of the solar system that demonstrates
 how gravity shapes orbits — built with **TypeScript + Three.js + Vite**.
 
-It opens with a guided, 24-step walkthrough and then hands you a free-explore
+It opens with a guided, 43-step walkthrough and then hands you a free-explore
 mode. Everything is driven by real astronomical data; the only thing the
 renderer ever fakes is the *scale* (and that is a toggle you control).
 
@@ -31,40 +31,55 @@ npm run build    # type-check + production bundle into dist/
 
 ## The guided tour
 
-A narrated, 24-step walkthrough that builds up *why* orbits exist before showing
-the whole system. Jump around with the **dropdown** or the dots, and every step
-has a **deep link** — paste `…/#why-no-fall` to land straight on that step. An
-**EN / PL** switch in the panel header toggles the narration between English and
-Polish (the choice is remembered).
+A 43-step walkthrough that builds up *why* orbits exist before showing the whole
+system. Jump around with the **dropdown** or the dots, and every step has a
+**deep link** — paste `…/#why-no-fall` to land straight on that step. An
+**EN / PL** switch in the panel header toggles the text between English and
+Polish (the choice is remembered). The first slide offers to auto-play the tour
+with music, holding each step for its reading time — touch Back, Next or the
+dropdown and it stops. **⚑ Something not right?** opens a pre-filled GitHub issue
+for whatever slide you are looking at. It opens like this:
 
-1. **What is gravity?** (`#what-is-gravity`) — just two bodies and the equal-and-
-   opposite force vectors between them (Newton's 3rd law); same force, unequal effect.
-2. **Gravity builds the Sun** (`#birth-of-sun`) — a cloud of dust collapses and
-   swirls into the Sun (accretion animation).
-3. **Gravity builds the Earth** (`#birth-of-earth`) — the same in miniature in the
-   leftover disk; the young Earth glows molten as it forms.
-4. **A moving body keeps moving** (`#inertia`) — the Sun is removed; Earth drifts
-   in a straight line at constant velocity (Newton's 1st law). Inertia alone.
-5. **Why the Earth doesn't fall into the Sun** (`#why-no-fall`) — velocity vector +
-   gravity vector + a dashed "straight path without gravity." Gravity bends the
-   straight line into a closed loop — an orbit is just falling and always missing.
-6. **The Earth and the Moon** (`#earth-moon`) — the same law one level down.
-7. **Why the Moon doesn't fall to Earth** (`#moon-no-fall`) — the orbit-balance
-   argument again, now Moon↔Earth: gravity + sideways velocity vectors and the
-   dashed straight-line path. The camera follows Earth as it orbits.
-8. **Into the third dimension** (`#into-3d`) — tilt into 3D for real inclinations;
-   projection drop-lines map a 3D position onto the flat 2D plane.
-9. **Spinning on their axes** (`#self-rotation`) — besides orbiting, every body
-   spins on its own (tilted) axis; this is where axial rotation switches on.
-10. **The Sun moves too — orbits are really helices** (`#sun-moving`) — the Sun
-    drifts at 45° through a parallax starfield; planets' real-space trails coil
-    into 3-D helices around its path.
-11. **The same forces, still at work** (`#sun-moving-vectors`) — velocity (along
-    the helix) + gravity (toward the Sun) arrows on every body during that motion.
-12. **Moons ride along too** (`#sun-moving-moons`) — the Moon coils around the
-    Earth's coil around the Sun's path: helices within helices.
-13. **The whole solar system** (`#solar-system`) — all eight planets, Pluto, and
-    the major moons on their real J2000 orbits.
+- **What is gravity?** (`#what-is-gravity`) — just two bodies and the equal-and-
+  opposite force vectors between them (Newton's 3rd law); same force, unequal effect.
+- **Before there were stars** (`#early-universe`) — that one law, given 13.8
+  billion years and an almost perfectly smooth gas, draws the cosmic web.
+- **Gravity builds the Sun** (`#birth-of-sun`) — a cloud of dust collapses and
+  swirls into the Sun (accretion animation).
+- **Gravity builds the Earth** (`#birth-of-earth`) — the same in miniature in the
+  leftover disk; the young Earth glows molten as it forms.
+- **A moving body keeps moving** (`#inertia`) — the Sun is removed; Earth drifts
+  in a straight line at constant velocity (Newton's 1st law). Inertia alone.
+- **Why the Earth doesn't fall into the Sun** (`#why-no-fall`) — velocity vector +
+  gravity vector + a dashed "straight path without gravity." Gravity bends the
+  straight line into a closed loop — an orbit is just falling and always missing.
+- **The Earth and the Moon** (`#earth-moon`) — the same law one level down.
+- **Why the Moon doesn't fall to Earth** (`#moon-no-fall`) — the orbit-balance
+  argument again, now Moon↔Earth: gravity + sideways velocity vectors and the
+  dashed straight-line path. The camera follows Earth as it orbits.
+- **Into the third dimension** (`#into-3d`) — tilt into 3D for real inclinations;
+  projection drop-lines map a 3D position onto the flat 2D plane.
+- **Spinning on their axes** (`#self-rotation`) — besides orbiting, every body
+  spins on its own (tilted) axis; this is where axial rotation switches on.
+- **The Sun moves too — orbits are really helices** (`#sun-moving`) — the Sun
+  drifts at 45° through a parallax starfield; planets' real-space trails coil
+  into 3-D helices around its path.
+- **The same forces, still at work** (`#sun-moving-vectors`) — velocity (along
+  the helix) + gravity (toward the Sun) arrows on every body during that motion.
+- **Moons ride along too** (`#sun-moving-moons`) — the Moon coils around the
+  Earth's coil around the Sun's path: helices within helices.
+- **The whole solar system** (`#solar-system`) — all eight planets, Pluto, and
+  the major moons on their real J2000 orbits.
+
+From there the tour keeps widening out: tides and the **lumpy geoid**
+(`#geoid`), the **fixed North Star** and its 26 000-year wobble (`#polaris`),
+**light and gravity's 8 m 19 s lag** (`#light-lag`),
+Earth's **magnetic shield** (`#magnetosphere`), spheres of influence, Lagrange
+points, resonance and the **rose of Venus** (`#venus-rose`), the Voyager gravity
+assists and the **heliosphere** they crossed (`#heliosphere`), then the galaxy —
+the **nested motions carrying you right now** (`#cosmic-motion`), Sagittarius A*
+and dark matter. The last six steps are Einstein's: curved spacetime, Mercury's
+precession, lensing, time dilation, black holes, and gravitational waves.
 
 `#explore` (or "Skip · Explore") leaves the tour for the free-explore panel;
 "Replay guided tour" restarts it from step 1.

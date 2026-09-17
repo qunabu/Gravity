@@ -29,6 +29,15 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
   color: rgba(255, 255, 255, 0.35); text-transform: uppercase;
 }
 .credit.credit-left { right: auto; left: 14px; }
+.credit-sep { margin: 0 6px; opacity: 0.5; }
+/* Same voice as the credit it sits next to — a quiet offer, not a call to action. */
+.credit-btn {
+  display: inline-flex; align-items: center; gap: 4px; padding: 0;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; font-size: inherit; letter-spacing: inherit;
+  text-transform: inherit; color: inherit;
+}
+.credit-btn:hover { color: var(--text); }
 
 /* Background-music toggle — bottom-left, just above the "Made by" credit. */
 .music-toggle {
@@ -42,6 +51,38 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 }
 .music-toggle:hover { color: var(--text); border-color: var(--line-strong); }
 .music-toggle.on { color: #05070d; background: var(--accent); border-color: var(--accent); }
+
+/* Frame + caption over the 3-D coastline inset (tides slide only). The diorama
+   itself is drawn on the canvas behind this transparent div. */
+.tide-panel {
+  position: fixed; left: 14px; bottom: 64px; z-index: 6;
+  width: 240px; height: 164px; pointer-events: none;
+  border: 1px solid var(--line); border-radius: 4px;
+}
+.tide-panel-title {
+  position: absolute; top: 6px; left: 8px;
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted);
+}
+.tide2d-label {
+  position: absolute; top: 6px; right: 8px;
+  font-family: var(--sans); font-size: 11px; font-weight: 600; color: var(--text);
+}
+@media (max-width: 760px) { .tide-panel { width: 180px; height: 124px; bottom: auto; top: 40px; left: 10px; } }
+
+/* Tide-height-vs-time graph (tides slide only) — top-left. */
+.tide-graph {
+  position: fixed; left: 14px; top: 14px; z-index: 6;
+  width: 460px; padding: 8px 10px 4px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  backdrop-filter: blur(6px);
+}
+.tide-graph-title {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 2px;
+}
+.tide-graph svg { width: 100%; height: auto; display: block; }
+@media (max-width: 760px) { .tide-graph { width: 280px; } }
 
 /* First-slide call-to-action: one tap starts music + narrated auto-play.
    Same visual language as the Back/Next buttons (uppercase, hairline, accent
@@ -78,13 +119,39 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
   color: rgba(255, 255, 255, 0.5); text-shadow: 0 0 6px rgba(0, 0, 0, 1);
   transform: translate(8px, -5px); white-space: nowrap;
 }
+/* The flag planted on the Moon's near side — the one that never turns away. */
+.moon-label.near-side {
+  color: #ffd08a; letter-spacing: 0.1em;
+  transform: translate(2px, -5px);
+}
 .vec-label {
   font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.05em;
   padding: 2px 7px; white-space: nowrap; text-shadow: 0 0 6px #000;
   background: rgba(0, 0, 0, 0.6); border-radius: 1px;
 }
+.vec-label.stack { text-align: center; line-height: 1.4; }
+.vec-label.stack b { font-weight: 500; color: #ffe6a8; }
+/* A readout that ticks every frame: fixed width so it can't shimmy. */
+.vec-label.clock { min-width: 27ch; font-variant-numeric: tabular-nums; }
+.vec-label.big { font-size: 13px; letter-spacing: 0.07em; padding: 4px 10px; color: #fff; }
 .vec-label.vel { color: #7af0a6; border: 1px solid rgba(122, 240, 166, 0.55); }
 .vec-label.grav { color: #ff8f8f; border: 1px solid rgba(255, 90, 90, 0.55); }
+
+/* "Go deeper" link under a slide's narration (e.g. the Moon explainer). */
+.tour-link {
+  display: none; flex: none; margin: 2px 0 16px;
+  font-size: 11.5px; line-height: 1.45; letter-spacing: 0.01em;
+  color: var(--accent); text-decoration: none;
+  border-left: 2px solid var(--accent); padding-left: 9px;
+}
+.tour-link:hover { text-decoration: underline; }
+
+/* A glossary term linked inline in the narration (e.g. "barycenter"). */
+.body-link {
+  color: var(--text); text-decoration: none;
+  border-bottom: 1px dotted rgba(255, 255, 255, 0.45);
+}
+.body-link:hover { color: var(--accent); border-bottom-color: var(--accent); }
 
 /* ── Panels ──────────────────────────────────────────────────────────── */
 .panel {
@@ -234,7 +301,7 @@ body.tour-active .tour-panel { display: flex; }
 .tour-progress.on { display: block; }
 .tour-progress-fill { display: block; height: 100%; width: 0%; background: #fff; }
 
-.tour-head { display: flex; align-items: center; justify-content: space-between; gap: 7px; margin-bottom: 12px; flex: none; }
+.tour-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 7px; margin-bottom: 12px; flex: none; }
 .tour-eyebrow {
   font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.13em;
   text-transform: uppercase; color: var(--muted); white-space: nowrap;
@@ -245,14 +312,7 @@ body.tour-active .tour-panel { display: flex; }
   font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; padding: 4px;
 }
 .tour-skip:hover { color: var(--text); }
-/* Auto-play (narration) toggle */
-.tour-auto {
-  background: transparent; border: 1px solid var(--line); border-radius: 2px;
-  color: var(--muted); cursor: pointer; flex: none;
-  font-size: 11px; line-height: 1; padding: 5px 8px;
-}
-.tour-auto:hover { color: var(--text); border-color: var(--line-strong); }
-.tour-auto.on { background: var(--accent); border-color: var(--accent); color: #000; }
+
 /* Collapse toggle — mobile only (hidden on desktop). Styled as a clear,
    bordered button with a generous tap target so it's obviously tappable. */
 .tour-collapse {
@@ -322,7 +382,7 @@ body.tour-active .tour-panel { display: flex; }
 }
 .tour-body {
   font-size: 12px; line-height: 1.6; color: var(--muted-2);
-  margin: 10px 0 14px; overflow-y: auto; flex: 1 1 auto;
+  margin: 10px 0 14px; overflow-y: auto; flex: 1 1 auto; min-height: 0;
 }
 .tour-foot { display: flex; align-items: center; gap: 10px; flex: none; }
 .tour-foot button {
