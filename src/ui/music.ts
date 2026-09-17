@@ -9,7 +9,6 @@
 const MUSIC_FILE = 'Journey_Through_the_Solar_System_2026-06-10T072340.mp3';
 const STORAGE_KEY = 'gravity-music';
 const TARGET_VOLUME = 0.32;
-const DUCK_VOLUME = 0.1; // lowered while the narrator is speaking
 
 export function initMusic(): void {
   const btn = document.getElementById('music-toggle') as HTMLButtonElement | null;
@@ -22,7 +21,6 @@ export function initMusic(): void {
   audio.src = `${import.meta.env.BASE_URL}audio/${MUSIC_FILE}`;
 
   let on = false;
-  let ducking = false; // narrator currently speaking → play quieter
   let fadeRaf = 0;
 
   function fadeTo(target: number, done?: () => void): void {
@@ -42,7 +40,7 @@ export function initMusic(): void {
     btn!.setAttribute('aria-pressed', String(on));
     if (on) {
       audio.play()
-        .then(() => fadeTo(ducking ? DUCK_VOLUME : TARGET_VOLUME))
+        .then(() => fadeTo(TARGET_VOLUME))
         .catch(() => { on = false; btn!.classList.remove('on'); btn!.setAttribute('aria-pressed', 'false'); });
     } else {
       fadeTo(0, () => audio.pause());
@@ -52,13 +50,6 @@ export function initMusic(): void {
 
   btn.addEventListener('click', () => setOn(!on));
   btn.hidden = false;
-
-  // Duck under the narration: the tour fires `gravity-narration` when the
-  // narrator starts/stops speaking; dip the music while it talks.
-  window.addEventListener('gravity-narration', (e: Event) => {
-    ducking = !!(e as CustomEvent<{ speaking: boolean }>).detail?.speaking;
-    if (on) fadeTo(ducking ? DUCK_VOLUME : TARGET_VOLUME);
-  });
 
   // If music was on last visit, resume it on the first user gesture.
   let remembered = false;

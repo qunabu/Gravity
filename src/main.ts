@@ -5,6 +5,9 @@ import { initMusic } from './ui/music';
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const world = new World(canvas);
+// Dev-only handle for poking at the scene from the console (and for driving
+// frames by hand while checking a slide). Stripped from production builds.
+if (import.meta.env.DEV) (window as unknown as { world: World }).world = world;
 
 // Build the panel first (it sets #app innerHTML); then the Tour appends its
 // overlay into that DOM. The tour mutates world state directly, so `sync`
