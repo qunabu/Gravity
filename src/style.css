@@ -23,25 +23,65 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 
 #scene { position: fixed; inset: 0; width: 100vw; height: 100vh; display: block; }
 
-.credit {
-  position: fixed; right: 14px; bottom: 10px; z-index: 5;
-  font-family: var(--mono); font-size: 9px; letter-spacing: 0.08em;
-  color: rgba(255, 255, 255, 0.35); text-transform: uppercase;
+/* ℹ button + the About sheet behind it. The credits, texture licences and the
+   bug link all used to sit in the footer, in view of every single frame; they
+   are reference material, so they hide here until asked for. */
+.info-btn {
+  position: fixed; left: 52px; bottom: 14px; z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  width: 30px; height: 30px; padding: 0;
+  background: var(--panel); color: var(--muted);
+  border: 1px solid var(--line); border-radius: 50%;
+  cursor: pointer; backdrop-filter: blur(6px);
+  transition: color 0.18s ease, border-color 0.18s ease, background 0.18s ease;
 }
-.credit.credit-left { right: auto; left: 14px; }
-.credit-sep { margin: 0 6px; opacity: 0.5; }
-/* Same voice as the credit it sits next to — a quiet offer, not a call to action. */
-.credit-btn {
-  display: inline-flex; align-items: center; gap: 4px; padding: 0;
-  background: none; border: none; cursor: pointer;
-  font-family: inherit; font-size: inherit; letter-spacing: inherit;
-  text-transform: inherit; color: inherit;
-}
-.credit-btn:hover { color: var(--text); }
+.info-btn:hover { color: var(--text); border-color: var(--line-strong); }
+.info-btn[aria-expanded='true'] { color: #05070d; background: var(--accent); border-color: var(--accent); }
 
-/* Background-music toggle — bottom-left, just above the "Made by" credit. */
+.about { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; }
+.about[hidden] { display: none; }
+.about-scrim { position: absolute; inset: 0; background: rgba(0, 0, 0, 0.72); backdrop-filter: blur(3px); }
+.about-card {
+  position: relative; width: min(420px, calc(100vw - 32px));
+  max-height: calc(100vh - 48px); overflow-y: auto;
+  padding: 22px 24px 20px;
+  background: rgba(8, 10, 16, 0.94); border: 1px solid var(--line); border-radius: 4px;
+  backdrop-filter: blur(10px);
+  animation: about-in 0.22s ease both;
+}
+@keyframes about-in { from { opacity: 0; transform: translateY(8px); } }
+.about-x {
+  position: absolute; top: 10px; right: 10px; width: 24px; height: 24px; padding: 0;
+  background: none; border: none; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1;
+}
+.about-x:hover { color: var(--text); }
+.about-eyebrow {
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--muted);
+}
+.about-name { margin-top: 8px; font-size: 14px; font-weight: 600; letter-spacing: 0.04em; }
+.about-intro { margin: 8px 0 16px; font-size: 12.5px; line-height: 1.55; color: var(--muted-2); }
+.about-list { margin: 0; display: grid; gap: 7px; }
+.about-list > div { display: grid; grid-template-columns: 104px 1fr; gap: 12px; align-items: baseline; }
+.about-list dt {
+  font-family: var(--mono); font-size: 8.5px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); padding-top: 1px;
+}
+.about-list dd { margin: 0; font-size: 12px; color: var(--text); }
+.about-list a { color: var(--text); text-decoration: none; border-bottom: 1px dotted rgba(255, 255, 255, 0.4); }
+.about-list a:hover { border-bottom-color: var(--text); }
+/* A quiet offer, not a call to action — same voice as the credits above it. */
+.about-issue {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 18px; padding: 7px 12px;
+  background: none; border: 1px solid var(--line); border-radius: 2px; cursor: pointer;
+  font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--muted); transition: color 0.18s ease, border-color 0.18s ease;
+}
+.about-issue:hover { color: var(--text); border-color: var(--line-strong); }
+
+/* Background-music toggle — bottom-left, beside the ℹ button. */
 .music-toggle {
-  position: fixed; left: 14px; bottom: 30px; z-index: 6;
+  position: fixed; left: 14px; bottom: 14px; z-index: 6;
   display: flex; align-items: center; justify-content: center;
   width: 30px; height: 30px; padding: 0;
   background: var(--panel); color: var(--muted);
@@ -70,6 +110,37 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 }
 @media (max-width: 760px) { .tide-panel { width: 180px; height: 124px; bottom: auto; top: 40px; left: 10px; } }
 
+/* Colour key for the Lagrange contour map — bottom-left. The map is the whole
+   slide, and a map without a key is decoration. */
+.lag-legend {
+  position: fixed; left: 14px; bottom: 56px; z-index: 6;
+  width: 330px; padding: 9px 11px 10px; pointer-events: none;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  backdrop-filter: blur(6px);
+}
+.lag-legend-title {
+  font-family: var(--mono); font-size: 8px; letter-spacing: 0.13em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 7px;
+}
+.lag-bar {
+  height: 7px; border-radius: 1px;
+  background: linear-gradient(90deg, #04060e, #12183a 14%, #342e6a 30%, #703a7a 50%, #ba5864 70%, #ec9656 88%, #f6c480);
+}
+.lag-bar-ends {
+  display: flex; justify-content: space-between; margin-top: 3px;
+  font-family: var(--mono); font-size: 7.5px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted);
+}
+.lag-key { margin: 9px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.lag-key li {
+  display: grid; grid-template-columns: 10px 1fr; gap: 7px; align-items: start;
+  font-size: 10.5px; line-height: 1.35; color: var(--muted-2);
+}
+.lag-sw { width: 8px; height: 8px; margin-top: 3px; border-radius: 50%; }
+.lag-sw-stable { background: #8affc0; box-shadow: 0 0 6px rgba(138, 255, 192, 0.6); }
+.lag-sw-saddle { background: #ffb04a; box-shadow: 0 0 6px rgba(255, 176, 74, 0.6); }
+@media (max-width: 760px) { .lag-legend { width: calc(100vw - 28px); bottom: auto; top: 46px; } }
+
 /* Tide-height-vs-time graph (tides slide only) — top-left. */
 .tide-graph {
   position: fixed; left: 14px; top: 14px; z-index: 6;
@@ -97,8 +168,6 @@ body { font-family: var(--sans); color: var(--text); font-weight: 400; -webkit-f
 }
 .tour-cta:hover { background: #d9e2ee; opacity: 1; }
 .tour-cta svg { display: block; margin-left: -2px; }
-.credit a { color: rgba(255, 255, 255, 0.55); text-decoration: none; }
-.credit a:hover { color: var(--text); }
 .label-layer { position: fixed; inset: 0; pointer-events: none; }
 
 /* ── In-scene labels ─────────────────────────────────────────────────── */
@@ -433,12 +502,11 @@ body.tour-active .tour-panel { display: flex; }
     max-height: 56vh; overflow-y: auto;
   }
 
-  /* Keep the credits clear of the bottom sheet. */
-  .credit { bottom: auto; top: 8px; }
-  .credit.credit-left { top: 8px; }
-
-  /* Move the music toggle up by the credits, clear of the bottom sheet. */
-  .music-toggle { bottom: auto; top: 4px; left: auto; right: 12px; }
+  /* Move the two round buttons to the top, clear of the bottom sheet. */
+  .music-toggle { bottom: auto; top: 8px; left: auto; right: 12px; }
+  .info-btn { bottom: auto; top: 8px; left: auto; right: 48px; }
+  .about-card { padding: 20px 18px 18px; }
+  .about-list > div { grid-template-columns: 92px 1fr; }
 
   /* Keep the CTA in the upper area, clear of the bottom-sheet panel. */
   .tour-cta { bottom: auto; top: 34%; }

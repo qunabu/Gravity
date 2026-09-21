@@ -2,6 +2,7 @@ import { World } from './scene/world';
 import { buildUI } from './ui/panel';
 import { Tour } from './ui/tour';
 import { initMusic } from './ui/music';
+import { initAbout } from './ui/about';
 
 const canvas = document.getElementById('scene') as HTMLCanvasElement;
 const world = new World(canvas);
@@ -18,6 +19,7 @@ if (import.meta.env.DEV || location.search.includes('promo')) {
 let tour: Tour;
 const sync = buildUI(world, () => tour.restart());
 tour = new Tour(world, () => sync());
+initAbout();
 
 // Begin in the guided walkthrough (honoring any #step deep link in the URL).
 tour.start();

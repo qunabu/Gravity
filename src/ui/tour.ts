@@ -348,9 +348,9 @@ const STEPS_SOURCE: TourStep[] = [
   },
   {
     id: 'lagrange',
-    title: 'Lagrange points: parking spots in space',
+    title: 'Lagrange points: the shape of the force',
     body:
-      'Ordinarily the closer you orbit the Sun, the faster you must go — the orange dot is a body just inside Earth’s orbit doing exactly that on its own, running steadily ahead of us. But at five particular spots Earth’s pull (blue arrows) offsets the Sun’s (orange) by just enough to stretch the year back out to 365 days. A craft there keeps station with Earth, so this whole pattern turns as one piece, once a year. L1 and L2 hold great observatories — SOHO watches the Sun from L1, the James Webb telescope sits in our shadow at L2 — but both are saddles rather than bowls: a probe slides off and has to keep thrusting back, as these two are doing. L4 and L5, sixty degrees ahead and behind, are real bowls: rock nudged off them swings back in long loops, so asteroids collect. Jupiter’s hold Trojans in their thousands.',
+      'This is the landscape gravity actually makes. Step into the frame that turns with Earth, add the outward pull of that turning to the two bodies’ gravity, and every force in the problem becomes a slope on one map: two bottomless wells, a warm ridge at Earth’s own distance from the Sun, and five places where the ground is level — the Lagrange points. Park on one and you keep station with Earth, so the whole map turns as a single piece, once a year. L1, L2 and L3 sit on saddles: level along the ridge, downhill along the Sun–Earth line, so a probe slides off and has to thrust back every few weeks. SOHO does that at L1, watching the Sun; Webb and Gaia do it at L2, facing away from it — and neither sits still, both trace wide halos around their point. L4 and L5, sixty degrees ahead and behind on two equilateral triangles, are hilltops that trap rather than shed: nudge a rock off one and the turning frame curls it back into a long tadpole loop, which is why they collect asteroids — thousands at Jupiter, one confirmed at Earth’s L4. Stretch that loop far enough and you get a horseshoe: an orbit that runs almost the whole way round and turns back before it ever reaches us.',
     scale: 'visual', physics: 'kepler', twoD: true, demo: 'lagrange',
     showMoons: false, showOrbits: false, showProjection: false, spin: false, daysPerSecond: 0,
     visible: [],
@@ -641,8 +641,8 @@ export const PL: Record<string, { title: string; body: string }> = {
     body: 'Grawitacja słabnie z odległością, więc Księżyc przyciąga ocean po bliższej stronie Ziemi silniej niż jej środek, a środek silniej niż stronę daleką. Ta różnica — siła pływowa — rozciąga oceany w dwa wybrzuszenia: jedno zwrócone ku Księżycowi, drugie dokładnie przeciwnie. Ziemia obraca się przez oba w ciągu doby, więc większość wybrzeży ma dwa przypływy i dwa odpływy. To samo rozciąganie przez eony zsynchronizowało obrót Księżyca z jego orbitą.',
   },
   'lagrange': {
-    title: 'Punkty Lagrange’a: parkingi w przestrzeni',
-    body: 'Zwykle im bliżej Słońca krążysz, tym szybciej musisz lecieć — pomarańczowa kropka to ciało tuż wewnątrz orbity Ziemi, które robi właśnie to samo z siebie i stale nam ucieka do przodu. Ale w pięciu szczególnych miejscach przyciąganie Ziemi (niebieskie strzałki) odejmuje od przyciągania Słońca (pomarańczowe) dokładnie tyle, by rok znów wydłużył się do 365 dni. Statek w takim punkcie utrzymuje pozycję względem Ziemi, więc cały ten układ obraca się jak jedna całość, raz na rok. L1 i L2 goszczą wielkie obserwatoria — SOHO obserwuje stamtąd Słońce, a teleskop Jamesa Webba siedzi w naszym cieniu w L2 — ale oba są raczej siodłami niż misami: sonda z nich zsuwa się i musi wciąż zawracać silnikami, tak jak te dwie. L4 i L5, sześćdziesiąt stopni przed planetą i za nią, to prawdziwe misy: skała z nich zepchnięta wraca długimi pętlami, więc asteroidy się gromadzą. Te u Jowisza mieszczą trojańczyki w tysiącach.',
+    title: 'Punkty Lagrange’a: kształt siły',
+    body: 'Oto krajobraz, który naprawdę rzeźbi grawitacja. Wejdź w układ obracający się razem z Ziemią, dodaj odśrodkowe ciągnięcie tego obrotu do przyciągania obu ciał — i wszystkie siły w tym zagadnieniu stają się nachyleniem jednej mapy: dwie bezdenne studnie, ciepły grzbiet dokładnie tam, gdzie krąży Ziemia, i pięć miejsc, w których grunt jest płaski — punkty Lagrange’a. Zaparkuj w takim punkcie, a utrzymasz pozycję względem Ziemi, więc cała mapa obraca się jak jedna całość, raz na rok. L1, L2 i L3 leżą na siodłach: płasko wzdłuż grzbietu, z górki wzdłuż linii Słońce–Ziemia, więc sonda się zsuwa i co kilka tygodni musi zawracać silnikami. Robi tak SOHO w L1, patrząc na Słońce, oraz Webb i Gaia w L2, odwróceni od niego — i żadne z nich nie stoi w miejscu, wszystkie kreślą szerokie halo wokół swojego punktu. L4 i L5, sześćdziesiąt stopni przed planetą i za nią, na dwóch trójkątach równobocznych, to wzniesienia, które łapią, a nie zrzucają: zepchnięta z nich skała wraca, zawinięta przez obracający się układ w długą pętlę w kształcie kijanki — dlatego gromadzą asteroidy: tysiące u Jowisza, jedną potwierdzoną w L4 Ziemi. Rozciągnij tę pętlę dostatecznie daleko, a powstanie podkowa: orbita, która obiega niemal całe koło i zawraca, zanim do nas dotrze.',
   },
   'resonance': {
     title: 'Rezonans orbitalny: grawitacja wybija rytm',
@@ -798,7 +798,7 @@ export const ZH: Record<string, { title: string; body: string }> = {
   },
   'gravity-assist-1': {
     title: '引力弹弓——旅行者 1 号',
-    body: '航天器可以窃取行星的一小部分轨道运动：在行星后方近距离飞掠，行星的引力把探测器向前甩出，更快，免费——这就是引力弹弓。旅行者 1 号于 1977 年 9 月发射，借助木星（1979）甩向土星（1980），随后土星的卫星泰坦的近距离飞掠将其轨道向上弯折，离开了行星平面，飞向星际空间。时钟运行真实的日期——看着行星在探测器到达时移动到合适的位置。',
+    body: '航天器可以窃取行星的一小部分轨道运动：在行星后方近距离飞掠，行星的引力把探测器向前甩出，更快，免费——这就是引力弹弓。旅行者 1 号于 1977 年 9 月发射，借助木星（1979）甩向土星（1980），随后土星的卫星泰坦的近距离飞掠将其轨道向上弯折，离开了行星平面，飞向星际空间。时钟显示的是真实日期——看着行星随着探测器的到达而移动到正确的位置。',
   },
   'gravity-assist-2': {
     title: '引力弹弓——旅行者 2 号（壮丽之旅）',
@@ -837,8 +837,8 @@ export const ZH: Record<string, { title: string; body: string }> = {
     body: '太阳不只发光——它还在吹。每秒一百万吨的带电粒子以每秒 400 公里向外奔流，太阳风暴期间更是远超此数。地球把它们偏转开。地核中翻腾的熔融铁驱动着一台发电机，它产生的磁场在这股风中挖出一个空腔：朝阳一侧被压缩到十个地球半径，背阳一侧则被拉成一条远远越过月球的长尾。少数溜进来的粒子沿着磁力线螺旋下落到两极，把空气点亮成极光。火星曾经也有磁场，后来失去了，太阳风从此一直在剥离它的大气。引力把空气按在地面上；磁场则让它不被吹走。',
   },
   'lagrange': {
-    title: '拉格朗日点：太空中的停车位',
-    body: '通常你绕太阳的轨道越靠内，就必须跑得越快——橙色的点正是一个位于地球轨道内侧、独自这样运行的天体，它稳定地跑在我们前面。但在五个特定的位置上，地球的引力（蓝色箭头）恰好抵消掉一部分太阳的引力（橙色箭头），刚好把一年重新拉长回 365 天。停在那里的航天器能与地球保持相对静止，所以你看到的整个图案作为一个整体，每年转一圈。L1 和 L2 驻扎着伟大的天文台——SOHO 在 L1 观测太阳，詹姆斯·韦布望远镜坐在 L2 的地影方向——但两者都是鞍点而非碗底：探测器会滑落，必须不断点火修正，就像这两个正在做的那样。前后各 60 度的 L4 和 L5 才是真正的碗：被推离的岩石会沿着长长的回路荡回来，于是小行星越聚越多。木星的 L4 和 L5 里，特洛伊小行星数以千计。',
+    title: '拉格朗日点：引力的地形图',
+    body: '这就是引力真正塑造出的地形。踏入随地球一同旋转的参考系，把旋转带来的向外拉扯与两个天体的引力加在一起，所有的力就变成了同一张地图上的坡度：两口深不见底的井、一道恰好位于地球轨道半径上的暖色山脊，以及五处地面水平的地方——拉格朗日点。停在那里就能与地球保持相对静止，所以整张地图作为一个整体，每年转一圈。L1、L2 和 L3 坐在鞍点上：沿山脊方向是平的，沿日地连线却是下坡，因此探测器会滑落，每隔几周就得点火修正。SOHO 在 L1 这样做，它盯着太阳；韦伯和盖亚在 L2 这样做，它们背对着太阳——而且它们都不是真的停着，而是绕着各自的点画出宽大的晕轮轨道。前后各 60 度的 L4 和 L5 坐在两个等边三角形的顶点上，它们是能困住东西的高地，而不是把东西甩出去：被推离的岩石会被旋转参考系卷回来，沿着长长的蝴蚪形回路荡回——这正是它们会聚集小行星的原因：木星那里数以千计，地球的 L4 则已确认一颗。把这条回路拉得足够长，就成了马蹄形轨道：它几乎绕行一整圈，却总在抵达我们之前就调头返回。',
   },
   'resonance': {
     title: '轨道共振：引力打着拍子',
@@ -894,6 +894,29 @@ const UI = {
   en: { tour: 'Guided Tour', explore: 'Explore ✕', back: '‹ Back', next: 'Next ›', finish: 'Finish ✓', speed: 'Time speed', step: 'Step', playCta: 'Play with music', issue: 'Something not right?' },
   pl: { tour: 'Przewodnik', explore: 'Eksploruj ✕', back: '‹ Wstecz', next: 'Dalej ›', finish: 'Zakończ ✓', speed: 'Prędkość czasu', step: 'Krok', playCta: 'Odtwórz z muzyką', issue: 'Coś nie tak?' },
   zh: { tour: '导览', explore: '自由探索 ✕', back: '‹ 上一步', next: '下一步 ›', finish: '完成 ✓', speed: '时间速度', step: '第', playCta: '播放音乐', issue: '哪里不对？' },
+};
+
+// The About sheet (behind the ℹ button) keyed by the data-a attributes in
+// index.html, so it follows the tour's language like the rest of the chrome.
+const ABOUT = {
+  en: {
+    title: 'About', madeBy: 'Made by', source: 'Source', builtWith: 'Built with',
+    earth: 'Earth texture', moon: 'Moon texture', other: 'Other surfaces',
+    otherVal: 'generated procedurally, offline',
+    intro: 'An interactive, physically grounded model of the solar system. Every orbit is computed from real astronomical data — only the scale is faked.',
+  },
+  pl: {
+    title: 'O projekcie', madeBy: 'Autor', source: 'Źródła', builtWith: 'Zbudowane w',
+    earth: 'Tekstura Ziemi', moon: 'Tekstura Księżyca', other: 'Pozostałe powierzchnie',
+    otherVal: 'generowane proceduralnie, offline',
+    intro: 'Interaktywny, oparty na fizyce model Układu Słonecznego. Każda orbita liczona jest z prawdziwych danych astronomicznych — udawana jest tylko skala.',
+  },
+  zh: {
+    title: '关于', madeBy: '作者', source: '源代码', builtWith: '技术栈',
+    earth: '地球贴图', moon: '月球贴图', other: '其余表面',
+    otherVal: '程序化生成，完全离线',
+    intro: '一个可交互、以真实物理为基础的太阳系模型。每一条轨道都由真实天文数据算出——只有尺度是假的。',
+  },
 };
 
 export function stepIndexFromHash(): number {
@@ -1379,6 +1402,11 @@ export class Tour {
     (this.root.querySelector('.tour-skip') as HTMLElement).textContent = ui.explore;
     const issueLabel = document.querySelector('#issue-link .issue-label');
     if (issueLabel) issueLabel.textContent = ui.issue;
+    const about = ABOUT[this.lang] as Record<string, string>;
+    document.querySelectorAll('#about [data-a]').forEach((el) => {
+      const key = (el as HTMLElement).dataset.a!;
+      if (about[key]) el.textContent = about[key];
+    });
     (this.root.querySelector('.glabel') as HTMLElement).childNodes[0].textContent = `${ui.speed} · `;
     this.root.querySelectorAll('.lang-btn').forEach((btn) => {
       btn.classList.toggle('on', (btn as HTMLElement).dataset.lang === this.lang);

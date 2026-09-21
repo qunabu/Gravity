@@ -74,8 +74,9 @@ for whatever slide you are looking at. It opens like this:
 From there the tour keeps widening out: tides and the **lumpy geoid**
 (`#geoid`), the **fixed North Star** and its 26 000-year wobble (`#polaris`),
 **light and gravity's 8 m 19 s lag** (`#light-lag`),
-Earth's **magnetic shield** (`#magnetosphere`), spheres of influence, Lagrange
-points, resonance and the **rose of Venus** (`#venus-rose`), the Voyager gravity
+Earth's **magnetic shield** (`#magnetosphere`), spheres of influence, the
+**Lagrange potential map** (`#lagrange`) with its saddles, Trojan tadpoles and
+horseshoe orbit, resonance and the **rose of Venus** (`#venus-rose`), the Voyager gravity
 assists and the **heliosphere** they crossed (`#heliosphere`), then the galaxy —
 the **nested motions carrying you right now** (`#cosmic-motion`), Sagittarius A*
 and dark matter. The last six steps are Einstein's: curved spacetime, Mercury's

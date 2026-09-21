@@ -6,7 +6,7 @@ import {
   Float32BufferAttribute, AdditiveBlending, BackSide, Points,
   PointsMaterial, RingGeometry, TorusGeometry, DoubleSide, MathUtils, ArrowHelper,
   LineDashedMaterial, EdgesGeometry, LineSegments, Raycaster, Vector2,
-  CatmullRomCurve3, WireframeGeometry,
+  CatmullRomCurve3, WireframeGeometry, PlaneGeometry, CanvasTexture, SRGBColorSpace,
   type ColorRepresentation,
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -281,11 +281,17 @@ export class World {
   private sgrLabel!: CSS2DObject; private sgrM = 0; private sgrDisk!: Mesh;
   private readonly sgrA = 11;    private readonly sgrE = 0.88;
   private dmGroup!: Group;       private dmStars: { mesh: Mesh; r: number; angle: number; obs: ArrowHelper; ghost: ArrowHelper }[] = [];
+  // Lagrange demo. The true Sun/Earth mass ratio (3e-6) puts L1 and L2 within
+  // 0.01 AU of Earth — invisible at any framing that also shows L3/L4/L5 — so
+  // lagMu is exaggerated to 1:50. It stays well under 0.0385, above which L4
+  // and L5 would stop being stable and the whole point would be lost.
+  private readonly lagR = 15;    private readonly lagMu = 0.02;
   private lagGroup!: Group;      private lagSpin!: Group;
-  private lagGhost!: Mesh;       private lagGhostLabel!: CSS2DObject;
-  private lagProbes: Mesh[] = [];
-  private lagTrojans: { mesh: Mesh; base: Vector3; tan: Vector3; rad: Vector3; a: number; b: number; w: number; ph: number }[] = [];
-  private lagAngle = 0;          private lagGhostAngle = 0; private lagT = 0;
+  private lagProbes: { mesh: Mesh; x: number; ax: number; az: number; w: number; ph: number; dir: number }[] = [];
+  private lagTrojans: { mesh: Mesh; lead0: number; s: number; r: number; a: number; b: number; w: number; ph: number }[] = [];
+  private lagHorse!: Mesh;       private lagHorsePath: Vector3[] = [];
+  private lagLegend!: HTMLElement;
+  private lagAngle = 0;          private lagT = 0;
   private tideGroup!: Group;     private tideEarth!: Mesh; private tideBulge!: Mesh; private tideMoonAngle = 0; private tideSpin = 0;
   private tideCity!: Mesh; private tideColumn!: Line; private tideCityLabel!: CSS2DObject;
   private tideMoon!: Mesh; private tideMoonLabel!: CSS2DObject; private tideAxis!: Line;
@@ -1604,100 +1610,296 @@ export class World {
     this.dmGroup = g;
   }
 
-  private buildLagrange(): void {
-    const g = new Group();
-    const R = 14;
-    g.add(this.circleLine(R, 0x394056, 0.4)); // Earth's orbit
-    // Same textured look as the main scene (self-illuminated so they read from
-    // the top-down view, where the Sun's point light sits inside them).
-    const sunTex = surfaceTexture('sun', 0xffb056);
-    const sun = new Mesh(new SphereGeometry(2.2, 40, 40),
-      new MeshStandardMaterial({ map: sunTex, emissiveMap: sunTex, emissive: 0xffffff, emissiveIntensity: 1.0, roughness: 1 }));
-    g.add(sun);
+  /** Effective potential of the circular restricted three-body problem: the two
+   *  gravity wells plus the centrifugal term, as felt in the frame that turns
+   *  with the pair. Units where the separation, the total mass and the orbital
+   *  rate are all 1, so the primaries sit at x = -mu and x = 1-mu and the two
+   *  maxima (L4, L5) come out at exactly -3/2. */
+  private lagPot(x: number, z: number): number {
+    const mu = this.lagMu;
+    const r1 = Math.hypot(x + mu, z), r2 = Math.hypot(x - (1 - mu), z);
+    return -(1 - mu) / Math.max(r1, 2e-3) - mu / Math.max(r2, 2e-3) - 0.5 * (x * x + z * z);
+  }
 
-    // Everything that keeps station with Earth lives in one group that turns
-    // once a year. That rotation *is* the idea: the whole pattern is frozen in
-    // the frame that goes round with Earth, so a probe parked on it stays put.
-    const spin = new Group(); g.add(spin);
-    this.lagSpin = spin;
+  /** The collinear point in [lo, hi], where the on-axis gradient vanishes.
+   *  Bisection rather than the usual series expansion: same length, exact for
+   *  any mass ratio, and it can't quietly drift as lagMu is tuned. */
+  private lagCollinear(lo: number, hi: number): number {
+    const mu = this.lagMu, x1 = -mu, x2 = 1 - mu;
+    const f = (x: number): number => {
+      const d1 = x - x1, d2 = x - x2;
+      return (1 - mu) * d1 / Math.abs(d1) ** 3 + mu * d2 / Math.abs(d2) ** 3 - x;
+    };
+    let a = lo, b = hi, fa = f(a);
+    for (let i = 0; i < 70; i++) {
+      const m = (a + b) / 2, fm = f(m);
+      if ((fm < 0) === (fa < 0)) { a = m; fa = fm; } else b = m;
+    }
+    return (a + b) / 2;
+  }
 
-    const earthPos = new Vector3(R, 0, 0);
-    const eTex = surfaceTexture('earth', 0x3a6ea5);
-    const earth = new Mesh(new SphereGeometry(0.95, 32, 32),
-      new MeshStandardMaterial({ map: eTex, emissiveMap: eTex, emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.95 }));
-    earth.position.copy(earthPos); spin.add(earth);
-
-    // Label offsets are staggered: L1, L2 and Earth sit within a couple of
-    // units of each other, so their tags would otherwise overlap.
-    const pts: [string, string, number, number, number][] = [
-      ['L1', 'L1 · SOHO', R - 1.4, 0, -1.8],
-      ['L2', 'L2 · Webb', R + 1.4, 0, -3.6],
-      ['L3', 'L3 · hidden behind the Sun', -R, 0, -1.8],
-      ['L4', 'L4 · Trojans', R * 0.5, -R * 0.866, -1.8],
-      ['L5', 'L5 · Trojans', R * 0.5, R * 0.866, 1.8],
-    ];
-    for (const [id, name, x, z, dz] of pts) {
-      const p = new Vector3(x, 0, z);
-      const m = new Mesh(new SphereGeometry(0.42, 16, 16), new MeshBasicMaterial({ color: 0x8affc0, blending: AdditiveBlending }));
-      m.position.copy(p); spin.add(m);
-      const l = this.makeLabel(name, 'vec-label');
-      l.position.set(x, 0, z + dz); spin.add(l);
-      // The two pulls this point balances: Sun's gravity (toward the Sun) and
-      // Earth's gravity (toward Earth). Lengths ∝ GM/d², clamped to stay visible.
-      const dS = p.length(), dE = p.distanceTo(earthPos);
-      const sunLen = MathUtils.clamp(140 / (dS * dS), 0.9, 4.5);
-      const earthLen = MathUtils.clamp(7 / (dE * dE), 0.9, 4.5);
-      const toSun = new Vector3().subVectors(new Vector3(0, 0, 0), p).normalize();
-      const toEarth = new Vector3().subVectors(earthPos, p).normalize();
-      spin.add(new ArrowHelper(toSun, p, sunLen, 0xffb04a, Math.min(0.7, sunLen * 0.4), 0.42));
-      spin.add(new ArrowHelper(toEarth, p, earthLen, 0x6fb4ff, Math.min(0.7, earthLen * 0.4), 0.42));
-
-      if (id === 'L1' || id === 'L2') {
-        // A saddle, not a bowl: a probe left alone slides off along the
-        // Sun–Earth line, so it drifts and then thrusts itself back.
-        const probe = new Mesh(new SphereGeometry(0.26, 12, 12), new MeshBasicMaterial({ color: 0xfff1d0 }));
-        probe.position.copy(p);
-        probe.userData = { base: p.clone(), dir: id === 'L2' ? 1 : -1 };
-        spin.add(probe); this.lagProbes.push(probe);
-      }
-      if (id === 'L4' || id === 'L5') {
-        // A real bowl: asteroids nudged off it swing back, tracing long
-        // tadpole loops around the point instead of escaping. Jupiter's are
-        // the famous ones; Earth has at least one, 2010 TK7, at its L4.
-        for (let k = 0; k < 9; k++) {
-          const t = new Mesh(new SphereGeometry(0.15, 10, 10),
-            new MeshBasicMaterial({ color: 0x8affc0, transparent: true, opacity: 0.7 }));
-          const tan = new Vector3(-p.z, 0, p.x).normalize(); // along the orbit
-          const rad = p.clone().normalize();                 // out from the Sun
-          this.lagTrojans.push({
-            mesh: t, base: p, tan, rad,
-            a: 0.9 + Math.random() * 1.7, b: 0.35 + Math.random() * 0.65,
-            w: 0.35 + Math.random() * 0.3, ph: Math.random() * Math.PI * 2,
-          });
-          spin.add(t);
-        }
+  /** The potential drawn as a contour map — the picture every textbook uses:
+   *  two wells, a warm ring at the corotation radius, hilltops at L4/L5 and
+   *  the three saddles between them. Filled bands plus hairline contours,
+   *  baked once into a canvas and laid flat under the markers. */
+  private buildLagrangeField(ext: number): Mesh {
+    const N = 640;
+    // The whole story lives in the few hundredths just below the L4/L5 maximum,
+    // so depth is compressed logarithmically; K sets how much of the top of
+    // that range gets spread across the ramp.
+    const K = 0.004, LMAX = Math.log1p(1.1 / K);
+    const dep = new Float32Array(N * N);
+    for (let j = 0; j < N; j++) {
+      const z = ((j / (N - 1)) * 2 - 1) * ext;
+      for (let i = 0; i < N; i++) {
+        const x = ((i / (N - 1)) * 2 - 1) * ext;
+        dep[j * N + i] = Math.min(1, Math.log1p(Math.max(0, -1.5 - this.lagPot(x, z)) / K) / LMAX);
       }
     }
-    const sl = this.makeLabel('Sun', 'vec-label'); sl.position.set(0, 0, -3.2); g.add(sl);
-    const el = this.makeLabel('Earth', 'vec-label'); el.position.set(R, 0, 2.4); spin.add(el);
+    // High ground is warm, deep ground fades into the near-black of the rest of
+    // the scene, so the map ends in space rather than on an edge.
+    // Capped at a clear amber rather than white: the crest is broad, and a
+    // blown-out one would swallow every marker and annotation drawn over it.
+    const ramp = [
+      [0.00, 246, 196, 128], [0.12, 236, 150, 86], [0.30, 186, 88, 100],
+      [0.50, 112, 58, 122], [0.70, 52, 46, 106], [0.86, 18, 24, 54],
+      [1.00, 4, 6, 14],
+    ];
+    const cv = document.createElement('canvas'); cv.width = cv.height = N;
+    const ctx = cv.getContext('2d')!;
+    const img = ctx.createImageData(N, N), px = img.data;
+    const bands = 18;
+    for (let j = 0; j < N; j++) {
+      for (let i = 0; i < N; i++) {
+        const k = j * N + i, t = dep[k];
+        let g = 1;
+        while (g < ramp.length - 1 && ramp[g][0] < t) g++;
+        const a = ramp[g - 1], b = ramp[g], f = (t - a[0]) / (b[0] - a[0]);
+        // Contours without marching squares: measure the local slope in bands
+        // per texel, then shade by how close this texel sits to a boundary —
+        // an antialiased hairline instead of a staircase. Where the slope is
+        // steeper than a band per texel the lines would only alias into moiré,
+        // so those (the well floors) are left plain.
+        const tr = dep[k + (i < N - 1 ? 1 : 0)], tb = dep[k + (j < N - 1 ? N : 0)];
+        const slope = Math.max(Math.abs(t - tr), Math.abs(t - tb)) * bands;
+        const fr = t * bands - Math.floor(t * bands);
+        // Faded out, not cut off: a hard cutoff leaves one stray dotted ring
+        // at the radius where the crowding starts, which reads as an object.
+        const room = MathUtils.clamp((0.55 - slope) / 0.22, 0, 1)
+          * MathUtils.clamp((0.95 - t) / 0.07, 0, 1);
+        const cov = slope > 1e-7
+          ? room * MathUtils.clamp(1 - Math.min(fr, 1 - fr) / slope, 0, 1) : 0;
+        const lift = cov * (t < 0.30 ? -62 : 52); // dark lines on light ground, light on dark
+        const o = k * 4;
+        for (let c = 0; c < 3; c++) {
+          px[o + c] = MathUtils.clamp(a[c + 1] + (b[c + 1] - a[c + 1]) * f + lift, 0, 255);
+        }
+        const rx = (i / (N - 1)) * 2 - 1, rz = (j / (N - 1)) * 2 - 1;
+        px[o + 3] = 255 * MathUtils.clamp((1 - Math.hypot(rx, rz)) / 0.16, 0, 1); // feathered rim
+      }
+    }
+    ctx.putImageData(img, 0, 0);
+    const tex = new CanvasTexture(cv);
+    tex.colorSpace = SRGBColorSpace;
+    const size = 2 * ext * this.lagR;
+    const m = new Mesh(new PlaneGeometry(size, size),
+      new MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = -0.4;   // under everything else, so nothing z-fights with it
+    m.renderOrder = -1;
+    return m;
+  }
 
-    // A body on L1's circle with no Earth to hold it back: Kepler says the
-    // closer orbit is the faster one, so it pulls steadily ahead. That is
-    // exactly what Earth's pull cancels at L1.
-    this.lagGhost = new Mesh(new SphereGeometry(0.3, 14, 14),
-      new MeshBasicMaterial({ color: 0xff8f6b, transparent: true, opacity: 0.85 }));
-    g.add(this.lagGhost);
-    this.lagGhostLabel = this.makeLabel('no Earth to hold it back → runs ahead', 'vec-label');
-    g.add(this.lagGhostLabel);
+  private buildLagrange(): void {
+    const g = new Group();
+    const R = this.lagR, mu = this.lagMu, EXT = 1.45;
 
-    const legend = (text: string, row: number) => {
-      const l = this.makeLabel(text, 'vec-label');
-      l.position.set(-15.5, 0, -14 + row * 2.1); g.add(l);
+    // Everything here keeps station with Earth, so it all lives in one group
+    // that turns once a year. That rotation *is* the idea: the pattern is
+    // frozen in the frame that goes round with Earth, so a probe parked on it
+    // stays put.
+    const spin = new Group(); g.add(spin);
+    this.lagSpin = spin;
+    spin.add(this.buildLagrangeField(EXT));
+
+    // Polar helper in the natural coordinates of this diagram: lead angle
+    // (positive = ahead of Earth along the orbit) and distance from the
+    // barycenter. Earth moves toward -Z, so a lead is a rotation toward -Z.
+    const at = (lead: number, r: number): Vector3 =>
+      new Vector3(Math.cos(lead) * r, 0, -Math.sin(lead) * r);
+
+    const sunX = -mu * R, earthX = (1 - mu) * R;
+    const earthPos = new Vector3(earthX, 0, 0);
+    const L1 = this.lagCollinear(-mu + 0.05, 1 - mu - 0.02) * R;
+    const L2 = this.lagCollinear(1 - mu + 0.02, 2) * R;
+    const L3 = this.lagCollinear(-2, -mu - 0.05) * R;
+    const L4 = at(Math.PI / 3, earthX), L5 = at(-Math.PI / 3, earthX);
+
+    g.add(this.circleLine(earthX, 0x5a6480, 0.5)); // Earth's orbit
+
+    const dash = (a: Vector3, b: Vector3, color: number, op: number): Line => {
+      const l = new Line(new BufferGeometry().setFromPoints([a, b]),
+        new LineDashedMaterial({ color, dashSize: 0.8, gapSize: 0.6, transparent: true, opacity: op }));
+      l.computeLineDistances(); return l;
     };
-    legend('→ Sun’s pull', 0);
-    legend('→ Earth’s pull', 1);
-    legend('L4 · L5 are stable — they collect asteroids', 2);
-    legend('L1 · L2 · L3 are saddles — probes must nudge back', 3);
+    // The Sun–Earth line, carried on past L2 one way and out to L3 the other:
+    // the axis all three saddles sit on.
+    spin.add(dash(new Vector3(L3 - 2.5, 0, 0), new Vector3(L2 + 2.5, 0, 0), 0xc3cbdb, 0.5));
+    // L4 and L5 close two equilateral triangles with the Sun and Earth. Drawing
+    // them is the quickest way to say where sixty degrees comes from.
+    for (const p of [L4, L5]) {
+      spin.add(dash(new Vector3(sunX, 0, 0), p, 0x8affc0, 0.7));
+      spin.add(dash(earthPos, p, 0x8affc0, 0.7));
+    }
+    const arc: Vector3[] = [];
+    for (let k = 0; k <= 28; k++) {
+      const a = (k / 28) * Math.PI / 3;
+      arc.push(new Vector3(sunX + Math.cos(a) * 4.6, 0, -Math.sin(a) * 4.6));
+    }
+    spin.add(new Line(new BufferGeometry().setFromPoints(arc),
+      new LineBasicMaterial({ color: 0x8affc0, transparent: true, opacity: 0.6 })));
+
+    const sunTex = surfaceTexture('sun', 0xffb056);
+    const sun = new Mesh(new SphereGeometry(1.9, 40, 40),
+      new MeshStandardMaterial({ map: sunTex, emissiveMap: sunTex, emissive: 0xffffff, emissiveIntensity: 1.0, roughness: 1 }));
+    sun.position.x = sunX; spin.add(sun);
+    const eTex = surfaceTexture('earth', 0x3a6ea5);
+    const earth = new Mesh(new SphereGeometry(0.75, 32, 32),
+      new MeshStandardMaterial({ map: eTex, emissiveMap: eTex, emissive: 0xffffff, emissiveIntensity: 0.6, roughness: 0.95 }));
+    earth.position.copy(earthPos); spin.add(earth);
+
+    // A marker that stays readable on top of the contour map: a bright core
+    // inside a thin ring, colour-coded by what the point actually does.
+    const mark = (p: Vector3, color: number): void => {
+      // A punched-out dark disc first: over the crest of the map a bare marker
+      // would be one bright thing on another. The hole makes it a marker again.
+      const hole = new Mesh(new RingGeometry(0, 0.72, 28),
+        new MeshBasicMaterial({ color: 0x05070d, transparent: true, opacity: 0.66, side: DoubleSide, depthWrite: false }));
+      hole.rotation.x = -Math.PI / 2; hole.position.copy(p); spin.add(hole);
+      const core = new Mesh(new RingGeometry(0, 0.26, 24),
+        new MeshBasicMaterial({ color, side: DoubleSide, depthWrite: false }));
+      core.rotation.x = -Math.PI / 2; core.position.copy(p); spin.add(core);
+      const ring = new Mesh(new RingGeometry(0.62, 0.74, 36),
+        new MeshBasicMaterial({ color, transparent: true, opacity: 0.85, side: DoubleSide, depthWrite: false }));
+      ring.rotation.x = -Math.PI / 2; ring.position.copy(p); spin.add(ring);
+    };
+    // A saddle: the one way out is along the Sun–Earth line (amber), and every
+    // other direction falls back in (mint). That asymmetry is the whole
+    // difference between L1/L2/L3 and L4/L5.
+    const saddle = (x: number): void => {
+      for (const sg of [-1, 1]) {
+        const out = new ArrowHelper(new Vector3(sg, 0, 0), new Vector3(x + sg * 0.85, 0, 0), 1.0, 0xff8a2c, 0.44, 0.3);
+        this.setArrowOpacity(out, 1); spin.add(out);
+        const back = new ArrowHelper(new Vector3(0, 0, -sg), new Vector3(x, 0, sg * 2.3), 1.0, 0x8affc0, 0.44, 0.3);
+        this.setArrowOpacity(back, 0.75); spin.add(back);
+      }
+    };
+    // A bowl: nudge a rock off it in any direction and it swings back, so
+    // debris collects instead of leaking away.
+    const bowl = (p: Vector3): void => {
+      for (let k = 0; k < 4; k++) {
+        const a = Math.PI / 4 + (k / 4) * Math.PI * 2;
+        const d = new Vector3(Math.cos(a), 0, Math.sin(a));
+        const arr = new ArrowHelper(d.clone().negate(), p.clone().addScaledVector(d, 3.0), 1.1, 0x8affc0, 0.44, 0.3);
+        this.setArrowOpacity(arr, 0.7); spin.add(arr);
+      }
+    };
+    const UNSTABLE = 0xffb04a, STABLE = 0x8affc0;
+    for (const x of [L1, L2, L3]) { mark(new Vector3(x, 0, 0), UNSTABLE); saddle(x); }
+    for (const p of [L4, L5]) { mark(p, STABLE); bowl(p); }
+
+    const tag = (text: string, x: number, z: number): void => {
+      const l = this.makeLabel(text, 'vec-label');
+      l.position.set(x, 0, z); spin.add(l);
+    };
+    tag('Sun', sunX, 3.0);
+    tag('Earth', earthX, -2.3);
+    tag('60°', sunX + 4.4, -2.9);
+    tag('L1 · SOHO', L1 - 0.7, 3.6);
+    tag('L2 · Webb', L2 + 0.7, 3.6);
+    tag('L3 · forever behind the Sun', L3 + 2.2, 2.7);
+    tag('L4 · Trojans', L4.x, L4.z - 3.9);
+    tag('L5 · Trojans', L5.x, L5.z + 3.9);
+
+    // Neither SOHO nor Webb sits *on* its point: both trace a wide halo around
+    // it, and both slide off along the unstable axis and burn their way back
+    // every few weeks. Parked, but never once at rest.
+    for (const [x, dir, ph] of [[L1, -1, 0], [L2, 1, 2]] as [number, number, number][]) {
+      const halo: Vector3[] = [];
+      for (let k = 0; k <= 80; k++) {
+        const a = (k / 80) * Math.PI * 2;
+        halo.push(new Vector3(x + Math.sin(a) * 0.6, 0, Math.cos(a) * 1.85));
+      }
+      spin.add(new Line(new BufferGeometry().setFromPoints(halo),
+        new LineBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0.45 })));
+      const m = new Mesh(new SphereGeometry(0.2, 12, 12), new MeshBasicMaterial({ color: 0xfff1d0 }));
+      spin.add(m);
+      this.lagProbes.push({ mesh: m, x, ax: 0.6, az: 1.85, w: 1.1, ph, dir });
+    }
+
+    // Trojan swarms. A real Trojan doesn't sit on its point either — it crawls
+    // round a long tadpole, fat on the far side and pinched toward Earth,
+    // taking centuries to go once around. Jupiter's number in the thousands;
+    // Earth has one confirmed, 2010 TK7, at L4.
+    for (const sg of [1, -1]) {
+      const lead0 = sg * Math.PI / 3;
+      const tad: Vector3[] = [];
+      for (let k = 0; k <= 96; k++) {
+        const th = (k / 96) * Math.PI * 2;
+        tad.push(at(lead0 + sg * 0.40 * Math.cos(th), earthX + sg * 1.5 * Math.sin(th) * (1 + 0.55 * Math.cos(th))));
+      }
+      spin.add(new Line(new BufferGeometry().setFromPoints(tad),
+        new LineBasicMaterial({ color: 0x2a8a63, transparent: true, opacity: 0.8 })));
+      for (let k = 0; k < 10; k++) {
+        const m = new Mesh(new SphereGeometry(0.15, 10, 10),
+          new MeshBasicMaterial({ color: 0x0a3527 }));
+        spin.add(m);
+        this.lagTrojans.push({
+          mesh: m, lead0, s: sg, r: earthX,
+          a: 0.12 + Math.random() * 0.34, b: 0.5 + Math.random() * 1.2,
+          w: 0.3 + Math.random() * 0.25, ph: Math.random() * Math.PI * 2,
+        });
+      }
+    }
+
+    // The horseshoe: the same libration taken to its limit. A body on one runs
+    // nearly all the way round the orbit, gets turned back by Earth before it
+    // arrives, and retraces the loop on the other side of Earth's radius.
+    const SPAN = MathUtils.degToRad(336), OPEN = MathUtils.degToRad(12), AMP = 1.3;
+    for (let k = 0; k <= 200; k++) {
+      const f = k / 200;
+      this.lagHorsePath.push(at(-OPEN - SPAN * f, earthX + AMP * Math.sin(Math.PI * f)));
+    }
+    for (let k = 0; k <= 200; k++) {
+      const f = k / 200;
+      this.lagHorsePath.push(at(-OPEN - SPAN * (1 - f), earthX - AMP * Math.sin(Math.PI * f)));
+    }
+    // Drawn as dark ink: it lies almost entirely on the bright crest, where a
+    // light line would disappear.
+    const hl = new Line(new BufferGeometry().setFromPoints(this.lagHorsePath),
+      new LineDashedMaterial({ color: 0x141a3c, dashSize: 0.7, gapSize: 0.5, transparent: true, opacity: 0.85 }));
+    hl.computeLineDistances(); spin.add(hl);
+    this.lagHorse = new Mesh(new SphereGeometry(0.22, 12, 12), new MeshBasicMaterial({ color: 0x3e9bff }));
+    spin.add(this.lagHorse);
+    const hlab = this.makeLabel('horseshoe orbit — turns back before it reaches Earth', 'vec-label');
+    hlab.position.copy(at(MathUtils.degToRad(152), earthX + 4.4)); spin.add(hlab);
+
+    // The colour key for the map. It has to be read, not glanced at, so it sits
+    // in the page chrome rather than floating in the scene like the tags.
+    const el = document.createElement('div');
+    el.className = 'lag-legend';
+    el.style.display = 'none';
+    el.innerHTML = `
+      <div class="lag-legend-title">Effective potential · frame rotating with Earth</div>
+      <div class="lag-bar"></div>
+      <div class="lag-bar-ends"><span>deep — falls away</span><span>high ground</span></div>
+      <ul class="lag-key">
+        <li><i class="lag-sw lag-sw-stable"></i>L4 · L5 — hilltops that trap: rock nudged off swings back, so asteroids collect</li>
+        <li><i class="lag-sw lag-sw-saddle"></i>L1 · L2 · L3 — saddles: a probe slides off along the Sun–Earth line and must thrust back</li>
+      </ul>`;
+    document.body.appendChild(el);
+    this.lagLegend = el;
+
     g.visible = false; this.scene.add(g);
     this.lagGroup = g;
   }
@@ -2766,8 +2968,9 @@ export class World {
   }
   startLagrange(): void {
     this.beginExtra('lagrange');
-    this.lagAngle = 0; this.lagGhostAngle = 0; this.lagT = 0;
-    this.flyTo(new Vector3(-3, 40, 0.001), new Vector3(-3, 0, 0));
+    this.lagAngle = 0; this.lagT = 0;
+    // Framed so the whole contour disc clears the narration panel on the right.
+    this.flyTo(new Vector3(7.5, 32, 0.001), new Vector3(7.5, 0, 0));
   }
   startTides(): void {
     this.beginExtra('tides');
@@ -2851,6 +3054,7 @@ export class World {
     this.polGroup.visible = mode === 'polaris';
     this.cmGroup.visible = mode === 'cosmicmotion';
     this.euGroup.visible = mode === 'earlyuniverse';
+    this.lagLegend.style.display = mode === 'lagrange' ? 'block' : 'none';
     this.tidePanel.style.display = mode === 'tides' ? 'block' : 'none';
     this.tideGraph.style.display = mode === 'tides' ? 'block' : 'none';
 
@@ -3025,34 +3229,26 @@ export class World {
         (this.exoStarTrail.geometry.getAttribute('position') as Float32BufferAttribute).needsUpdate = true;
       }
     } else if (mode === 'lagrange') {
-      const R = 14, rGhost = R - 1.4;
-      if (!paused) {
-        this.lagT += dtReal;
-        this.lagAngle += dtReal * 0.2;                    // one year ≈ 31 s
-        // Kepler on L1's circle: period ∝ r^1.5, so it runs 1.17× faster.
-        this.lagGhostAngle += dtReal * 0.2 * Math.pow(R / rGhost, 1.5);
-      }
+      if (!paused) { this.lagT += dtReal; this.lagAngle += dtReal * 0.2; } // one year ≈ 31 s
       this.lagSpin.rotation.y = this.lagAngle;
-      const ga = this.lagGhostAngle;
-      this.lagGhost.position.set(Math.cos(ga) * rGhost, 0, -Math.sin(ga) * rGhost);
-      this.lagGhostLabel.position.copy(this.lagGhost.position).multiplyScalar(0.7);
-      // Saddle points: each probe slides off along the Sun–Earth line, then
-      // spends a moment of fuel getting back — station-keeping, for real.
+      // Station-keeping, for real: each probe rides its halo loop and, on top
+      // of that, slides off down the unstable axis until a burn puts it back.
       for (const pr of this.lagProbes) {
-        const base = pr.userData.base as Vector3;
-        const dir = pr.userData.dir as number;
-        const cycle = (this.lagT % 5) / 5;
-        const drift = cycle < 0.82 ? Math.pow(cycle / 0.82, 2) * 1.5 : (1 - (cycle - 0.82) / 0.18) * 1.5;
-        pr.position.copy(base).addScaledVector(new Vector3(dir, 0, 0), drift);
-        pr.scale.setScalar(cycle > 0.82 ? 1.9 : 1); // thruster flare on the way back
+        const a = this.lagT * pr.w + pr.ph;
+        const cyc = ((this.lagT + pr.ph) % 6) / 6;
+        const slip = (cyc < 0.85 ? (cyc / 0.85) ** 2 : 1 - (cyc - 0.85) / 0.15) * 1.4;
+        pr.mesh.position.set(pr.x + Math.sin(a) * pr.ax + pr.dir * slip, 0, Math.cos(a) * pr.az);
+        pr.mesh.scale.setScalar(cyc > 0.85 ? 2.1 : 1); // thruster flare on the way back
       }
-      // Trojan swarm: long tadpole loops around L4 / L5 — nudged off, pulled back.
+      // Trojans crawling round their tadpoles — nudged off, always pulled back.
       for (const t of this.lagTrojans) {
-        const ang = this.lagT * t.w + t.ph;
-        t.mesh.position.copy(t.base)
-          .addScaledVector(t.tan, Math.cos(ang) * t.a)
-          .addScaledVector(t.rad, Math.sin(ang) * t.b);
+        const th = this.lagT * t.w + t.ph;
+        const lead = t.lead0 + t.s * t.a * Math.cos(th);
+        const rad = t.r + t.s * t.b * Math.sin(th) * (1 + 0.55 * Math.cos(th));
+        t.mesh.position.set(Math.cos(lead) * rad, 0, -Math.sin(lead) * rad);
       }
+      const hp = this.lagHorsePath;
+      this.lagHorse.position.copy(hp[Math.floor(((this.lagT * 0.03) % 1) * hp.length) % hp.length]);
     } else if (mode === 'resonance') {
       if (!paused) this.resAngle += dtReal * 0.7;
       // Periods in 1:2:4 → angular speeds 4:2:1 (Io fastest).
